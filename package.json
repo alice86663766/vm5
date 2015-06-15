@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aglio": "^1.18.0",
     "bluebird": "^2.9.15",
     "chai": "^2.3.0",
     "chai-as-promised": "^5.1.0",
