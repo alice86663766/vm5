@@ -1,0 +1,5 @@
+--timeout 20000
+--compilers ls:LiveScript
+--harmony
+-R spec
+--require source-map-support/register
