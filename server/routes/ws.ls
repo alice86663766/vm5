@@ -3,6 +3,20 @@ require! ws: WebSocket
 require! url: URL
 require! './the-matrix': {throttled-cids}
 
+require! './video-landscape.json': landscape-video-frames
+require! './video-portrait.json':  portrait-video-frames
+
+create-pre-recorded-ws = (frames) -> ->*
+  frame-count = 0
+  intervalId = setInterval ~>
+    if @readyState isnt WebSocket.OPEN or frame-count >= frames.length
+      clearInterval intervalId
+      @close!
+      return
+    @send new Buffer frames[frame-count], 'hex'
+    frame-count++
+  , 1000 / 30
+
 module.exports = do
 
   handle-error: route.all '(.*)', (path, next) ->*
@@ -14,17 +28,8 @@ module.exports = do
   mimic-novm-ws: route.all '/v3/mimic-novm-ws', ->*
     @close 1000, 'e0'
 
-  pre-recorded-landscape: route.all '/v3/pre-recorded-landscape', ->*
-    frames = require './video-landscape.json'
-    frame-count = 0
-    intervalId = setInterval ~>
-      if @readyState isnt WebSocket.OPEN or frame-count >= frames.length
-        clearInterval intervalId
-        @close!
-        return
-      @send new Buffer frames[frame-count], 'hex'
-      frame-count++
-    , 1000 / 30
+  pre-recorded-landscape: route.all '/v3/pre-recorded-landscape', create-pre-recorded-ws landscape-video-frames
+  pre-recorded-portrait:  route.all '/v3/pre-recorded-portrait',  create-pre-recorded-ws portrait-video-frames
 
   proxy-video: route.all '/?(.*)', ->*
     console.log 'websocket proxy to cloud!'

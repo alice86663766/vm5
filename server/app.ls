@@ -20,4 +20,5 @@ app
 app.ws.use routes.ws.handle-error
 app.ws.use routes.ws.mimic-novm-ws
 app.ws.use routes.ws.pre-recorded-landscape
+app.ws.use routes.ws.pre-recorded-portrait
 app.ws.use routes.ws.proxy-video
