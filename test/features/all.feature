@@ -1,5 +1,9 @@
 Feature: adserver mock API
 
+Background:
+
+  Given reset status
+
 Scenario Outline: set next trial [name]
   When I successfully call [api]
   Then I expect response of trial to contain [response]

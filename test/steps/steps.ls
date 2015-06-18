@@ -37,6 +37,9 @@ dictionary = new Yadda.Dictionary!
 
 module.exports = English.library dictionary
 
+.given "reset status", (next) ->
+  server.call-api('/v3/reset').finally (-> next!)
+
 .when "I call $api", (api, next) ->
   server.call-api(api).finally (-> next!)
 

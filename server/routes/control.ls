@@ -85,5 +85,10 @@ router.get '/v3/trial/stop-throttle-ws/:cid', (next) ->*
 router.get '/v3/debug/M', ->*
   @body = M
 
+router.get '/v3/reset/:cid', ->*
+  for key of M
+    delete M[key][@params.cid]
+  @body = result: 'ok'
+
 
 module.exports = router.routes!
