@@ -174,3 +174,41 @@ Set the fps of video websocket to unlimited. Note you may expirence a 'response 
 
             { "result": "ok" }
 
+### Group Auxiliry APIs
+
+## debug [/v3/debug/M]
+
+Dump the control flag map.
+
+### dump control flag map [GET]
+
++ Response 200 (application/json)
+
+            {
+                "novmCids": {},
+                "expiredCids": {},
+                "notYoursCids": {},
+                "wsNovmCids": {},
+                "timelimitCids": {},
+                "downloadFailCids": {},
+                "preRecordedCids": {},
+                "throttledCids": {
+                    "xxx": {
+                        "initFps": 100
+                    }
+				},
+                "statusCodeCids": {},
+                "brokenIconCids": {},
+                "campaignsNovmCids": {}
+            }
+
+## reset control status [/v3/reset/:cid]
+
+clear specific cid on control flag map.
+
+### rest specific cid's control status [GET]
+
++ Response 200 (application/json)
+
+            { "result": "ok" }
+
