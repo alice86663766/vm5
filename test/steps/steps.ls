@@ -85,14 +85,20 @@ module.exports = English.library dictionary
   n = parseInt n
   server.call-trial!
   .then server.connect-video-ws
-  .then (ws) ->
+  .then (ws) -> new Promise (resolve, reject) ->
     ws.on 'message', (msg) ->
-      if frames-count is 0
+      frames-count++
+      try
+        expect(msg).to.be.not.empty
+        return if frames-count > 1
         Promise.delay(1000 * n).then ->
           timeup-frames-count := frames-count
           ws.close!
-          next!
-      frames-count++
+          resolve true
+      catch e
+        reject e
+  .then -> next!
+  .catch (e) -> next e
 
 .when "^I connect video ws of trial for $n seconds? with last $n seconds? throttled to $n fps$", (total-sec, throttled-sec, fps, next) ->
   total-sec = parseInt total-sec
@@ -102,18 +108,24 @@ module.exports = English.library dictionary
   timeup-frames-count := 0
   server.call-trial!
   .then server.connect-video-ws
-  .then (ws) ->
+  .then (ws) -> new Promise (resolve, reject) ->
     ws.on 'message', (msg) ->
-      if frames-count is 0
+      frames-count++
+      try
+        expect(msg).to.be.not.empty
+        return if frames-count > 1
         Promise.delay(1000 * total-sec).then ->
           timeup-frames-count := frames-count
           ws.close!
-          next!
+          resolve true
         Promise.delay(1000 * (total-sec - throttled-sec)).then ->
           server.call-api "/v3/trial/start-throttle-ws-to-#{fps}-fps"
           .then server.last-resp-code
           .then (code) -> expect(code).to.equal 200
-      frames-count++
+      catch e
+        reject e
+  .then -> next!
+  .catch (e) -> next e
 
 .when "^I connect video ws of trial for $n seconds? with last $n seconds? stop throttle$", (total-sec, stop-throttled-sec, next) ->
   total-sec = parseInt total-sec
@@ -123,18 +135,24 @@ module.exports = English.library dictionary
   timeup-frames-count := 0
   server.call-trial!
   .then server.connect-video-ws
-  .then (ws) ->
+  .then (ws) -> new Promise (resolve, reject) ->
     ws.on 'message', (msg) ->
-      if frames-count is 0
+      frames-count++
+      try
+        expect(msg).to.be.not.empty
+        return if frames-count > 1
         Promise.delay(1000 * total-sec).then ->
           timeup-frames-count := frames-count
           ws.close!
-          next!
+          resolve true
         Promise.delay(1000 * (total-sec - stop-throttled-sec)).then ->
           server.call-api "/v3/trial/stop-throttle-ws"
           .then server.last-resp-code
           .then (code) -> expect(code).to.equal 200
-      frames-count++
+      catch e
+        reject e
+  .then -> next!
+  .catch (e) -> next e
 
 .then "I expect about $n \\+\\- $n frames received", (n, offset, next) ->
   n = +n

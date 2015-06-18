@@ -44,21 +44,20 @@ module.exports = do
 
     settings.max-fps = settings.init-fps
     console.log 'settings: ', settings
+    frame-queue = []
 
-    # create SDK ws, cloud ws, and throttle stream
+    # create SDK ws & cloud ws
     to-sdk = @
     to-cloud = new WebSocket "ws://#orig_host#{ @path }"
 
-    # frame queue & max-fps init
-    frame-queue = []
-
     # we don't throttle the SDK->cloud direction, simply proxy the messages
-    to-sdk.on 'message', (event) ->
-      to-cloud.send event.data
+    # frame control will use this
+    to-sdk.on 'message', (data) ->
+      to-cloud.send data
 
     # (producer) once receive data from cloud, put it into a buffer
-    to-cloud.on 'message', (event) ->
-      frame-queue?.push event.data
+    to-cloud.on 'message', (data) ->
+      frame-queue?.push data
 
     # (consumer) deque and send data to SDK according to current max-fps
     schedual-next = ->
