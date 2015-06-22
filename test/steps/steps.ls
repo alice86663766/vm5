@@ -28,6 +28,7 @@ server = new ServerMock
 
 frames-count = 0
 timeup-frames-count = 0
+video-ws = null
 
 dictionary = new Yadda.Dictionary!
 .define 'api', /(\S*)/
@@ -154,6 +155,13 @@ module.exports = English.library dictionary
   .then -> next!
   .catch (e) -> next e
 
+.when "^I connect video ws$", (next) ->
+  server.call-trial!
+  .then server.connect-video-ws
+  .then (ws) -> video-ws := ws
+  .then -> next!
+  .catch (e) -> next e
+
 .then "I expect about $n \\+\\- $n frames received", (n, offset, next) ->
   n = +n
   offset = +offset
@@ -172,4 +180,15 @@ module.exports = English.library dictionary
     campaigns.forEach (cmp) ->
       expect(cmp).to.containSubset(parseValue json)
     next!
+  .catch (e) -> next e
+
+.then "the ws is closed with code $n when I successfully call $api", (expected-code, api, next) ->
+  video-ws.on 'close', (code, message) ->
+    expect(code).to.equal +expected-code
+    video-ws := null
+    next!
+
+  Promise.delay(1000).then -> server.call-api(api)
+  .then server.last-resp-code
+  .then (code) -> expect(code).to.equal 200
   .catch (e) -> next e

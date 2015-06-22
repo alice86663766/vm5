@@ -187,7 +187,7 @@ Set the fps of video websocket to unlimited. Note you may expirence a 'response 
 
 ## terminate websocket [/v3/trial/terminate-ws/:cid]
 
-Immediately shuts down the connection. Client will receive close event with code 1006.
+Immediately shuts down the connection. Client will receive close event with code 1000.
 
 ### terminate ws [GET]
 

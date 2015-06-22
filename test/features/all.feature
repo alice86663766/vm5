@@ -66,3 +66,7 @@ Scenario: stop throttle
   And I connect video ws of trial for 5 seconds with last 3 seconds stop throttle
   Then I expect about 150 +- 15 frames received
 
+Scenario: terminate ws
+  When I successfully call /v3/trial/set-next-throttlable
+  And I connect video ws
+  Then the ws is closed with code 1000 when I successfully call /v3/trial/terminate-ws
