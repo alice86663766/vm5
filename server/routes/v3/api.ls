@@ -39,14 +39,17 @@ module.exports = do
         return
 
       if delete novm-cids[cid]
+        @status = 404
         @body = error: true, message: 'fail to request vm'
         return
 
       if delete expired-cids[cid]
+        @status = 404
         @body = error: true, message: 'this ad is expired'
         return
 
       if delete not-yours-cids[cid]
+        @status = 404
         @body = error: true, message: 'you do not have this ad'
         return
 
