@@ -1,7 +1,7 @@
 require! 'koa-route': route
 require! ws: WebSocket
 require! url: URL
-require! './the-matrix': {throttled-cids}
+require! './the-matrix': {throttled-cids, terminate-ws-cids}
 
 require! './video-landscape.json': landscape-video-frames
 require! './video-portrait.json':  portrait-video-frames
@@ -62,6 +62,7 @@ module.exports = do
     # (consumer) deque and send data to SDK according to current max-fps
     schedual-next = ->
       return if to-sdk.readyState isnt WebSocket.OPEN
+      return to-sdk.terminate! if delete terminate-ws-cids[cid]
       to-sdk.send frame-queue.shift! if frame-queue?.length > 0
       setTimeout schedual-next, 1000 / settings.max-fps
 

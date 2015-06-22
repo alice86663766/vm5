@@ -21,5 +21,6 @@ static-M = do
   status-code-cids: {}
   broken-icon-cids: {}
   campaigns-novm-cids: {}
+  terminate-ws-cids: {}
 
 module.exports = if process.env.NODE_ENV is 'development' then dynamic-M else static-M

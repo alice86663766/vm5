@@ -1,7 +1,7 @@
 require! 'koa-router': koaRouter
 require! './the-matrix': M
 debug = require('debug')('adserver-control:control')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids, terminate-ws-cids} = M
 
 router = koaRouter!
 
@@ -80,6 +80,14 @@ router.get '/v3/trial/stop-throttle-ws/:cid', (next) ->*
 
   debug 'stop throttle'
   throttled-cids[cid].max-fps = UNLIMITED_FPS
+  @body = result: 'ok'
+
+router.get '/v3/trial/terminate-ws/:cid', (next) ->*
+  {cid, code} = @params
+  @throw 400, 'not-set-throttle' if not throttled-cids[cid]
+
+  debug 'terminate ws'
+  terminate-ws-cids[cid] = true
   @body = result: 'ok'
 
 router.get '/v3/debug/M', ->*
