@@ -7,14 +7,15 @@ Background:
 Scenario Outline: set next trial [name]
   When I successfully call [api]
   Then I expect response of trial to contain [response]
+  And I expect response status code to be [code]
 
   Examples:
-    | name      | api                                  | response                                          |
-    | no vm     | /v3/trial/set-next-novm              | {error: true, message: 'fail to request vm'}      |
-    | expired   | /v3/trial/set-next-expired           | {error: true, message: 'this ad is expired'}      |
-    | not yours | /v3/trial/set-next-not-yours         | {error: true, message: 'you do not have this ad'} |
-    | 10 sec    | /v3/trial/set-next-timelimit-10-secs | {time_limit: 10}                                  |
-    | 5 sec     | /v3/trial/set-next-timelimit-5-secs  | {time_limit: 5}                                   |
+    | name      | api                                  | response                                          | code |
+    | no vm     | /v3/trial/set-next-novm              | {error: true, message: 'fail to request vm'}      |  404 |
+    | expired   | /v3/trial/set-next-expired           | {error: true, message: 'this ad is expired'}      |  404 |
+    | not yours | /v3/trial/set-next-not-yours         | {error: true, message: 'you do not have this ad'} |  404 |
+    | 10 sec    | /v3/trial/set-next-timelimit-10-secs | {time_limit: 10}                                  |  200 |
+    | 5 sec     | /v3/trial/set-next-timelimit-5-secs  | {time_limit: 5}                                   |  200 |
 
 Scenario Outline: set next trial status code [code]
   When I successfully call /v3/trial/set-next-status-code-[code]

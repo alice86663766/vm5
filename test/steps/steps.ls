@@ -57,6 +57,15 @@ module.exports = English.library dictionary
   expect(server.call-trial!).to.eventually
   .containSubset(parseValue json).notify next
 
+.then "I expect response status code to be $code", (code, next) ->
+  code = parseInt code
+  server.last-resp-code!
+  .then (resp-code) ->
+    expect(resp-code).to.equal code
+    next!
+  .catch (e) ->
+    next e
+
 .then "I expect response status code of trial to be $code", (code, next) ->
   code = parseInt code
   server.call-trial!
@@ -64,6 +73,8 @@ module.exports = English.library dictionary
   .then (resp-code) ->
     expect(resp-code).to.equal code
     next!
+  .catch (e) ->
+    next e
 
 .then "I expect response of trial contains a corrupt image link", (next) ->
   server.call-trial!
