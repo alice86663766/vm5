@@ -174,6 +174,17 @@ Set the fps of video websocket to unlimited. Note you may expirence a 'response 
 
             { "result": "ok" }
 
++ Response 400 (application/json)
+
+    You will get 400 if you didn't call `/v3/trial/set-next-throttlable` or `/v3/trial/start-throttle-ws-to-:fps-fps` first.
+
+    + Body
+
+            {
+                "error": true,
+                "message": ""not-set-throttle
+			}
+
 ### Group Auxiliry APIs
 
 ## debug [/v3/debug/M]
