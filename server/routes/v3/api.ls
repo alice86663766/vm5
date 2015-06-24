@@ -56,10 +56,8 @@ module.exports = do
       yield next # hand off to proxy
 
       # post process
-      debug '!!!!', timelimit-cids
       if tl = delete timelimit-cids[cid]
         @body.time_limit = tl
-      debug '!!!!', timelimit-cids
 
       if delete ws-novm-cids[cid]
         ss = @body.streams
