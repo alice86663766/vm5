@@ -1,5 +1,6 @@
 require! 'koa-route': route
 require! ws: WebSocket
+require! ramda: R
 require! url: URL
 require! './the-matrix': {throttled-cids, terminate-ws-cids}
 
@@ -36,6 +37,7 @@ module.exports = do
     {cid, orig_host} = URL.parse(@path, true).query
     settings = throttled-cids[cid]
     console.log 'orig host: ', orig_host, "ws://#orig_host#{ @path }"
+    get-data = R.nth-arg 0
 
     if not settings
       console.log 'not set throttled =_='
@@ -52,12 +54,10 @@ module.exports = do
 
     # we don't throttle the SDK->cloud direction, simply proxy the messages
     # frame control will use this
-    to-sdk.on 'message', (data) ->
-      to-cloud.send data
+    to-sdk.on 'message', get-data >> to-cloud~send
 
     # (producer) once receive data from cloud, put it into a buffer
-    to-cloud.on 'message', (data) ->
-      frame-queue.push data
+    to-cloud.on 'message', get-data >> frame-queue~push
 
     # (consumer) deque and send data to SDK according to current max-fps
     schedual-next = ->
