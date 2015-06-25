@@ -59,19 +59,16 @@ module.exports = do
       if tl = delete timelimit-cids[cid]
         @body.time_limit = tl
 
-      if delete ws-novm-cids[cid] and @body.streams
-        ss = @body.streams
+      if delete ws-novm-cids[cid] and ss = @body.streams
         ss.video_ws = ss.audio_ws = ss.ctrl_ws = "ws://#{@host}/v3/mimic-novm-ws"
 
       if delete download-fail-cids[cid]
         @body.icon = @body.background = 'http://gg.img'
 
-      if delete pre-recorded-cids[cid] and @body.streams
-        ss = @body.streams
+      if delete pre-recorded-cids[cid] and ss = @body.streams
         ss.video_ws = "ws://#{@host}/v3/pre-recorded-#{@body.orientation}"
 
-      if throttled-cids[cid]
-        ss = @body.streams
+      if throttled-cids[cid] and ss = @body.streams
         for type in ['video' 'audio' 'ctrl']
           key = type + '_ws'
           {path, host} = URL.parse ss[key]
