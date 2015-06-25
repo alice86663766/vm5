@@ -40,5 +40,11 @@ class FakeServer
   connect-video-ws: ~>
     @last-resp-body!
     .then (cmp) -> new WebSocket cmp.streams.video_ws
+  connect-audio-ws: ~>
+    @last-resp-body!
+    .then (cmp) -> new WebSocket cmp.streams.audio_ws
+  connect-ctrl-ws: ~>
+    @last-resp-body!
+    .then (cmp) -> new WebSocket cmp.streams.ctrl_ws
 
 module.exports = FakeServer

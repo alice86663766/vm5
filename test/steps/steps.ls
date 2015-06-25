@@ -29,6 +29,8 @@ server = new ServerMock
 frames-count = 0
 timeup-frames-count = 0
 video-ws = null
+audio-ws = null
+ctrl-ws = null
 
 dictionary = new Yadda.Dictionary!
 .define 'api', /(\S*)/
@@ -166,10 +168,20 @@ module.exports = English.library dictionary
   .then -> next!
   .catch (e) -> next e
 
-.when "^I connect video ws$", (next) ->
+.when "^I connect (video|audio|ctrl) ws$", (type, next) ->
   server.call-trial!
-  .then server.connect-video-ws
-  .then (ws) -> video-ws := ws
+  .then ->
+    return switch type
+    | 'video'   => server.connect-video-ws!
+    | 'audio'   => server.connect-audio-ws!
+    | 'ctrl'    => server.connect-ctrl-ws!
+    | otherwise => throw 'invalid ws type'
+  .then (ws) ->
+    switch type
+    | 'video'   => video-ws := ws
+    | 'audio'   => audio-ws := ws
+    | 'ctrl'    => ctrl-ws  := ws
+    | otherwise => throw 'invalid ws type'
   .then -> next!
   .catch (e) -> next e
 
@@ -193,8 +205,13 @@ module.exports = English.library dictionary
     next!
   .catch (e) -> next e
 
-.then "the ws is closed with code $n when I successfully call $api", (expected-code, api, next) ->
-  video-ws.on 'close', (code, message) ->
+.then "(video|audio|ctrl) ws is closed with code $n when I successfully call $api", (type, expected-code, api, next) ->
+  ws = switch type
+  | 'video'   => video-ws
+  | 'audio'   => audio-ws
+  | 'ctrl'    => ctrl-ws
+  | otherwise => throw 'invalid ws type'
+  ws.on 'close', (code, message) ->
     expect(code).to.equal +expected-code
     video-ws := null
     next!

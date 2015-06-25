@@ -85,12 +85,16 @@ router.get '/v3/trial/stop-throttle-ws/:cid', (next) ->*
   throttled-cids[cid].max-fps = UNLIMITED_FPS
   @body = result: 'ok'
 
-router.get '/v3/trial/terminate-ws/:cid', (next) ->*
-  {cid, code} = @params
+router.param 'wstype', (type, next) ->*
+  @throw 404 if type isnt /(video|audio|ctrl)/
+  yield next
+
+router.get '/v3/trial/terminate-:wstype-ws/:cid', (next) ->*
+  {cid, code, wstype} = @params
   @throw 400, 'not-set-throttle' if not throttled-cids[cid]
 
   debug 'terminate ws'
-  throttled-cids[cid].emit 'terminate-video'
+  throttled-cids[cid].emit "terminate-#wstype"
   @body = result: 'ok'
 
 router.get '/v3/debug/M', ->*

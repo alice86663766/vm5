@@ -185,11 +185,53 @@ Set the fps of video websocket to unlimited. Note you may expirence a 'response 
                 "message": ""not-set-throttle
 			}
 
-## terminate websocket [/v3/trial/terminate-ws/:cid]
+## terminate video websocket [/v3/trial/terminate-video-ws/:cid]
 
 Immediately shuts down the connection. Client will receive close event with code 1000.
 
-### terminate ws [GET]
+### terminate video ws [GET]
+
++ Response 200 (application/json)
+
+            { "result": "ok" }
+
++ Response 400 (application/json)
+
+    You will get 400 if you didn't call `/v3/trial/set-next-throttlable` or `/v3/trial/start-throttle-ws-to-:fps-fps` first.
+
+    + Body
+
+            {
+                "error": true,
+                "message": ""not-set-throttle
+			}
+
+## terminate audio websocket [/v3/trial/terminate-audio-ws/:cid]
+
+Immediately shuts down the connection. Client will receive close event with code 1000.
+
+### terminate audio ws [GET]
+
++ Response 200 (application/json)
+
+            { "result": "ok" }
+
++ Response 400 (application/json)
+
+    You will get 400 if you didn't call `/v3/trial/set-next-throttlable` or `/v3/trial/start-throttle-ws-to-:fps-fps` first.
+
+    + Body
+
+            {
+                "error": true,
+                "message": ""not-set-throttle
+			}
+
+## terminate ctrl websocket [/v3/trial/terminate-ctrl-ws/:cid]
+
+Immediately shuts down the connection. Client will receive close event with code 1000.
+
+### terminate ctrl ws [GET]
 
 + Response 200 (application/json)
 
