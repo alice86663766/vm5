@@ -4,7 +4,7 @@ require! ws: WebSocket
 require! ramda: R
 require! url: URL
 debug = require('debug')('adserver-mock:ws')
-require! './the-matrix': {throttled-cids, terminate-ws-cids}
+require! './the-matrix': {throttled-cids}
 
 require! './video-landscape.json': landscape-video-frames
 require! './video-portrait.json':  portrait-video-frames
@@ -50,11 +50,13 @@ proxy-ctrl = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
   to-sdk.on 'message', get-first-arg >> to-cloud~send
   to-cloud.on 'message', get-first-arg >> to-sdk~send
+  settings.on 'terminate-ctrl', -> to-sdk.terminate!
 
 proxy-audio = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
   to-sdk.on 'message', get-first-arg >> to-cloud~send
   to-cloud.on 'message', get-first-arg >> to-sdk~send
+  settings.on 'terminate-audio', -> to-sdk.terminate!
 
 proxy-video = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
@@ -72,12 +74,13 @@ proxy-video = (next) ->*
   # (consumer) deque and send data to SDK according to current max-fps
   schedual-next = ->
     return if to-sdk.readyState isnt WebSocket.OPEN
-    return to-sdk.terminate! if delete terminate-ws-cids[cid]
     to-sdk.send frame-queue.shift! if frame-queue?.length > 0
     setTimeout schedual-next, 1000 / settings.max-fps
 
   # trigger schedualing. bang!
   schedual-next!
+
+  settings.on 'terminate-video', -> to-sdk.terminate!
 
   # free memory
   to-cloud.on 'close', ->

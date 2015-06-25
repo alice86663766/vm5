@@ -1,7 +1,8 @@
 require! 'koa-router': koaRouter
 require! './the-matrix': M
+require! events: {EventEmitter}
 debug = require('debug')('adserver-control:control')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids, terminate-ws-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids} = M
 
 router = koaRouter!
 
@@ -58,12 +59,14 @@ UNLIMITED_FPS = 100
 
 router.get '/v3/trial/set-next-throttlable/:cid', (next) ->*
   {cid} = @params
-  throttled-cids[cid] = init-fps: UNLIMITED_FPS
+  throttled-cids[cid] = new EventEmitter
+  throttled-cids[cid].init-fps = UNLIMITED_FPS
   @body = result: 'ok'
 
 router.get '/v3/trial/set-next-throttled-to-:initfps-fps/:cid', (next) ->*
   {cid, initfps} = @params
-  throttled-cids[cid] = init-fps: initfps
+  throttled-cids[cid] = new EventEmitter
+  throttled-cids[cid].init-fps = initfps
   @body = result: 'ok'
 
 router.get '/v3/trial/start-throttle-ws-to-:fps-fps/:cid', (next) ->*
@@ -87,7 +90,7 @@ router.get '/v3/trial/terminate-ws/:cid', (next) ->*
   @throw 400, 'not-set-throttle' if not throttled-cids[cid]
 
   debug 'terminate ws'
-  terminate-ws-cids[cid] = true
+  throttled-cids[cid].emit 'terminate-video'
   @body = result: 'ok'
 
 router.get '/v3/debug/M', ->*
