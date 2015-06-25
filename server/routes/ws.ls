@@ -20,52 +20,74 @@ create-pre-recorded-ws = (frames) -> ->*
     frame-count++
   , 1000 / 30
 
-proxy-ws = ->*
-    debug 'websocket proxy to cloud!'
-    {cid, orig_host} = URL.parse(@path, true).query
-    settings = throttled-cids[cid]
-    debug 'orig host: ', orig_host, "ws://#orig_host#{ @path }"
-    get-first-arg = R.nth-arg 0
+proxy-ws = (next) ->*
+  debug 'websocket proxy to cloud!'
+  # parse & check
+  {cid, orig_host, type} = URL.parse(@path, true).query
+  settings = throttled-cids[cid]
+  debug 'settings: ', settings
+  if not settings
+    debug 'not set throttled =_='
+    @close 1000, 'e04'
+    return
 
-    if not settings
-      debug 'not set throttled =_='
-      @close 1000, 'e04'
-      return
+  # create SDK ws & cloud ws
+  to-sdk = @
+  to-cloud = new WebSocket "ws://#orig_host#{ @path }"
 
-    settings.max-fps = settings.init-fps
-    debug 'settings: ', settings
-    frame-queue = []
+  # setup cleanup
+  to-sdk.on 'close', ->
+    debug 'sdk ws close. also close cloud ws'
+    to-cloud.close 1000, 'close ws by adserver' # shutdown the other websocket
+    delete throttled-cids[cid]                  # deregister this cid
 
-    # create SDK ws & cloud ws
-    to-sdk = @
-    to-cloud = new WebSocket "ws://#orig_host#{ @path }"
+  @state = {cid, type, settings, to-sdk, to-cloud}
+  yield next
 
-    # we don't throttle the SDK->cloud direction, simply proxy the messages
-    # frame control will use this
-    to-sdk.on 'message', get-first-arg >> to-cloud~send
+get-first-arg = R.nth-arg 0
 
-    # (producer) once receive data from cloud, put it into a buffer
-    to-cloud.on 'message', get-first-arg >> frame-queue~push
+proxy-ctrl = (next) ->*
+  {cid, type, settings, to-sdk, to-cloud} = @state
+  yield next
+  return if type isnt 'ctrl'
+  to-sdk.on 'message', get-first-arg >> to-cloud~send
+  to-cloud.on 'message', get-first-arg >> to-sdk~send
 
-    # (consumer) deque and send data to SDK according to current max-fps
-    schedual-next = ->
-      return if to-sdk.readyState isnt WebSocket.OPEN
-      return to-sdk.terminate! if delete terminate-ws-cids[cid]
-      to-sdk.send frame-queue.shift! if frame-queue?.length > 0
-      setTimeout schedual-next, 1000 / settings.max-fps
+proxy-audio = (next) ->*
+  {cid, type, settings, to-sdk, to-cloud} = @state
+  yield next
+  return if type isnt 'audio'
+  to-sdk.on 'message', get-first-arg >> to-cloud~send
+  to-cloud.on 'message', get-first-arg >> to-sdk~send
 
-    # trigger schedualing. bang!
-    schedual-next!
+proxy-video = (next) ->*
+  {cid, type, settings, to-sdk, to-cloud} = @state
+  yield next
+  # return if type isnt 'video'
 
-    # cleanup
-    to-sdk.on 'close', ->
-      debug 'sdk ws close. also close cloud ws'
-      to-cloud.close 1000, 'close ws by adserver' # shutdown the other websocket
-      delete throttled-cids[cid]                  # deregister this cid
+  settings.max-fps = settings.init-fps
+  frame-queue = []
 
-    # free memory
-    to-cloud.on 'close', ->
-      frame-queue := null
+  # we don't throttle the SDK->cloud direction, simply proxy the messages
+  # frame control will use this
+  to-sdk.on 'message', get-first-arg >> to-cloud~send
+
+  # (producer) once receive data from cloud, put it into a buffer
+  to-cloud.on 'message', get-first-arg >> frame-queue~push
+
+  # (consumer) deque and send data to SDK according to current max-fps
+  schedual-next = ->
+    return if to-sdk.readyState isnt WebSocket.OPEN
+    return to-sdk.terminate! if delete terminate-ws-cids[cid]
+    to-sdk.send frame-queue.shift! if frame-queue?.length > 0
+    setTimeout schedual-next, 1000 / settings.max-fps
+
+  # trigger schedualing. bang!
+  schedual-next!
+
+  # free memory
+  to-cloud.on 'close', ->
+    frame-queue := null
 
 
 module.exports = do
@@ -82,4 +104,6 @@ module.exports = do
   pre-recorded-landscape: route.all '/v3/pre-recorded-landscape', create-pre-recorded-ws landscape-video-frames
   pre-recorded-portrait:  route.all '/v3/pre-recorded-portrait',  create-pre-recorded-ws portrait-video-frames
 
-  proxy-video: route.all '/?(.*)', compose [proxy-ws]
+  proxy-video: route.all '/?(.*)', ->*
+    # though koa-route doesn't support middleware, we can use koa-compose to implement ours
+    yield compose([proxy-ws, proxy-ctrl, proxy-audio, proxy-video]).call(@)
