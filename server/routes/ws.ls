@@ -57,7 +57,7 @@ module.exports = do
 
     # (producer) once receive data from cloud, put it into a buffer
     to-cloud.on 'message', (data) ->
-      frame-queue?.push data
+      frame-queue.push data
 
     # (consumer) deque and send data to SDK according to current max-fps
     schedual-next = ->
@@ -73,5 +73,8 @@ module.exports = do
     to-sdk.on 'close', ->
       console.log 'sdk ws close. also close cloud ws'
       to-cloud.close 1000, 'close ws by adserver' # shutdown the other websocket
-      frame-queue := null                         # free memory
       delete throttled-cids[cid]                  # deregister this cid
+
+    # free memory
+    to-cloud.on 'close', ->
+      frame-queue := null
