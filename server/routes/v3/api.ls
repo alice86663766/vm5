@@ -59,14 +59,14 @@ module.exports = do
       if tl = delete timelimit-cids[cid]
         @body.time_limit = tl
 
-      if delete ws-novm-cids[cid]
+      if delete ws-novm-cids[cid] and @body.streams
         ss = @body.streams
         ss.video_ws = ss.audio_ws = ss.ctrl_ws = "ws://#{@host}/v3/mimic-novm-ws"
 
       if delete download-fail-cids[cid]
         @body.icon = @body.background = 'http://gg.img'
 
-      if delete pre-recorded-cids[cid]
+      if delete pre-recorded-cids[cid] and @body.streams
         ss = @body.streams
         ss.video_ws = "ws://#{@host}/v3/pre-recorded-#{@body.orientation}"
 
