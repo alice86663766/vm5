@@ -49,13 +49,17 @@ proxy-ctrl = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
   to-sdk.on 'message', get-first-arg >> to-cloud~send
   to-cloud.on 'message', get-first-arg >> to-sdk~send
-  settings.on 'terminate-ctrl', -> to-sdk.terminate!
+  settings.on 'terminate-ctrl', ->
+    debug '!!!!! terminate-ctrl !!!!!'
+    to-sdk.terminate!
 
 proxy-audio = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
   to-sdk.on 'message', get-first-arg >> to-cloud~send
   to-cloud.on 'message', get-first-arg >> to-sdk~send
-  settings.on 'terminate-audio', -> to-sdk.terminate!
+  settings.on 'terminate-audio', ->
+    debug '!!!!! terminate-audio !!!!!'
+    to-sdk.terminate!
 
 proxy-video = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
@@ -79,7 +83,9 @@ proxy-video = (next) ->*
   # trigger schedualing. bang!
   schedual-next!
 
-  settings.on 'terminate-video', -> to-sdk.terminate!
+  settings.on 'terminate-video', ->
+    debug '!!!!! terminate-video !!!!!'
+    to-sdk.terminate!
 
   # free memory
   to-cloud.on 'close', ->
