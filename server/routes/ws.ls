@@ -23,7 +23,7 @@ create-pre-recorded-ws = (frames) -> ->*
 proxy-ws = (next) ->*
   debug 'websocket proxy to cloud!'
   # parse & check
-  {cid, orig_host, type} = URL.parse(@path, true).query
+  {cid, orig_host} = URL.parse(@path, true).query
   settings = throttled-cids[cid]
   debug 'settings: ', settings
   if not settings
@@ -41,29 +41,23 @@ proxy-ws = (next) ->*
     to-cloud.close 1000, 'close ws by adserver' # shutdown the other websocket
     delete throttled-cids[cid]                  # deregister this cid
 
-  @state = {cid, type, settings, to-sdk, to-cloud}
+  @state = {cid, settings, to-sdk, to-cloud}
   yield next
 
 get-first-arg = R.nth-arg 0
 
 proxy-ctrl = (next) ->*
-  {cid, type, settings, to-sdk, to-cloud} = @state
-  yield next
-  return if type isnt 'ctrl'
+  {cid, settings, to-sdk, to-cloud} = @state
   to-sdk.on 'message', get-first-arg >> to-cloud~send
   to-cloud.on 'message', get-first-arg >> to-sdk~send
 
 proxy-audio = (next) ->*
-  {cid, type, settings, to-sdk, to-cloud} = @state
-  yield next
-  return if type isnt 'audio'
+  {cid, settings, to-sdk, to-cloud} = @state
   to-sdk.on 'message', get-first-arg >> to-cloud~send
   to-cloud.on 'message', get-first-arg >> to-sdk~send
 
 proxy-video = (next) ->*
-  {cid, type, settings, to-sdk, to-cloud} = @state
-  yield next
-  # return if type isnt 'video'
+  {cid, settings, to-sdk, to-cloud} = @state
 
   settings.max-fps = settings.init-fps
   frame-queue = []
@@ -104,6 +98,15 @@ module.exports = do
   pre-recorded-landscape: route.all '/v3/pre-recorded-landscape', create-pre-recorded-ws landscape-video-frames
   pre-recorded-portrait:  route.all '/v3/pre-recorded-portrait',  create-pre-recorded-ws portrait-video-frames
 
-  proxy-video: route.all '/?(.*)', ->*
-    # though koa-route doesn't support middleware, we can use koa-compose to implement ours
-    yield compose([proxy-ws, proxy-ctrl, proxy-audio, proxy-video]).call(@)
+  # though koa-route doesn't support middleware, we can use koa-compose to implement ours
+  proxy-audio: route.all '/?(.*)type=audio(.*)', ->*
+    debug 'route to audio!'
+    yield compose([proxy-ws, proxy-audio]).call(@)
+
+  proxy-video: route.all '/?(.*)type=video(.*)', ->*
+    debug 'route to video!'
+    yield compose([proxy-ws, proxy-video]).call(@)
+
+  proxy-ctrl: route.all '/?(.*)type=ctrl(.*)', ->*
+    debug 'route to ctrl!'
+    yield compose([proxy-ws, proxy-ctrl]).call(@)

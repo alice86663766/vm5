@@ -72,9 +72,10 @@ module.exports = do
 
       if throttled-cids[cid]
         ss = @body.streams
-        for key in ['video_ws']
+        for type in ['video' 'audio' 'ctrl']
+          key = type + '_ws'
           {path, host} = URL.parse ss[key]
-          ss[key] = "ws://#{ @host + path }&cid=#{ cid }&orig_host=#{ host }"
+          ss[key] = "ws://#{ @host + path }&cid=#{ cid }&orig_host=#{ host }&type=#{ type }"
         debug ss
 
     proxy('/v3/trial')
