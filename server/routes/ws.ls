@@ -47,16 +47,24 @@ get-first-arg = R.nth-arg 0
 
 proxy-ctrl = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
-  to-sdk.on 'message', get-first-arg >> to-cloud~send
-  to-cloud.on 'message', get-first-arg >> to-sdk~send
+  to-sdk.on 'message', (data) ->
+    return if to-cloud.readyState isnt WebSocket.OPEN
+    to-cloud.send data
+  to-cloud.on 'message', (data) ->
+    return if to-sdk.readyState isnt WebSocket.OPEN
+    to-sdk.send data
   settings.on 'terminate-ctrl', ->
     debug '!!!!! terminate-ctrl !!!!!'
     to-sdk.terminate!
 
 proxy-audio = (next) ->*
   {cid, settings, to-sdk, to-cloud} = @state
-  to-sdk.on 'message', get-first-arg >> to-cloud~send
-  to-cloud.on 'message', get-first-arg >> to-sdk~send
+  to-sdk.on 'message', (data) ->
+    return if to-cloud.readyState isnt WebSocket.OPEN
+    to-cloud.send data
+  to-cloud.on 'message', (data) ->
+    return if to-sdk.readyState isnt WebSocket.OPEN
+    to-sdk.send data
   settings.on 'terminate-audio', ->
     debug '!!!!! terminate-audio !!!!!'
     to-sdk.terminate!
@@ -69,7 +77,9 @@ proxy-video = (next) ->*
 
   # we don't throttle the SDK->cloud direction, simply proxy the messages
   # frame control will use this
-  to-sdk.on 'message', get-first-arg >> to-cloud~send
+  to-sdk.on 'message', (data) ->
+    return if to-cloud.readyState isnt WebSocket.OPEN
+    to-cloud.send data
 
   # (producer) once receive data from cloud, put it into a buffer
   to-cloud.on 'message', get-first-arg >> frame-queue~push
