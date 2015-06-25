@@ -1,4 +1,5 @@
 require! 'koa-route': route
+require! 'koa-compose': compose
 require! ws: WebSocket
 require! ramda: R
 require! url: URL
@@ -19,21 +20,7 @@ create-pre-recorded-ws = (frames) -> ->*
     frame-count++
   , 1000 / 30
 
-module.exports = do
-
-  handle-error: route.all '(.*)', (path, next) ->*
-    try
-      yield next
-    catch
-      debug 'error in ws: ', e
-
-  mimic-novm-ws: route.all '/v3/mimic-novm-ws', ->*
-    @close 1000, 'e0'
-
-  pre-recorded-landscape: route.all '/v3/pre-recorded-landscape', create-pre-recorded-ws landscape-video-frames
-  pre-recorded-portrait:  route.all '/v3/pre-recorded-portrait',  create-pre-recorded-ws portrait-video-frames
-
-  proxy-video: route.all '/?(.*)', ->*
+proxy-ws = ->*
     debug 'websocket proxy to cloud!'
     {cid, orig_host} = URL.parse(@path, true).query
     settings = throttled-cids[cid]
@@ -79,3 +66,20 @@ module.exports = do
     # free memory
     to-cloud.on 'close', ->
       frame-queue := null
+
+
+module.exports = do
+
+  handle-error: route.all '(.*)', (path, next) ->*
+    try
+      yield next
+    catch
+      debug 'error in ws: ', e
+
+  mimic-novm-ws: route.all '/v3/mimic-novm-ws', ->*
+    @close 1000, 'e0'
+
+  pre-recorded-landscape: route.all '/v3/pre-recorded-landscape', create-pre-recorded-ws landscape-video-frames
+  pre-recorded-portrait:  route.all '/v3/pre-recorded-portrait',  create-pre-recorded-ws portrait-video-frames
+
+  proxy-video: route.all '/?(.*)', compose [proxy-ws]
