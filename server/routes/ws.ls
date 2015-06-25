@@ -25,7 +25,6 @@ proxy-ws = (next) ->*
   # parse & check
   {cid, orig_host} = URL.parse(@path, true).query
   settings = throttled-cids[cid]
-  debug 'settings: ', settings
   if not settings
     debug 'not set throttled =_='
     @close 1000, 'e04'
