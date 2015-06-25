@@ -2,6 +2,7 @@ require! 'koa-route': route
 require! ws: WebSocket
 require! ramda: R
 require! url: URL
+debug = require('debug')('adserver-mock:ws')
 require! './the-matrix': {throttled-cids, terminate-ws-cids}
 
 require! './video-landscape.json': landscape-video-frames
@@ -24,7 +25,7 @@ module.exports = do
     try
       yield next
     catch
-      console.log 'error in ws: ', e
+      debug 'error in ws: ', e
 
   mimic-novm-ws: route.all '/v3/mimic-novm-ws', ->*
     @close 1000, 'e0'
@@ -33,19 +34,19 @@ module.exports = do
   pre-recorded-portrait:  route.all '/v3/pre-recorded-portrait',  create-pre-recorded-ws portrait-video-frames
 
   proxy-video: route.all '/?(.*)', ->*
-    console.log 'websocket proxy to cloud!'
+    debug 'websocket proxy to cloud!'
     {cid, orig_host} = URL.parse(@path, true).query
     settings = throttled-cids[cid]
-    console.log 'orig host: ', orig_host, "ws://#orig_host#{ @path }"
     get-data = R.nth-arg 0
+    debug 'orig host: ', orig_host, "ws://#orig_host#{ @path }"
 
     if not settings
-      console.log 'not set throttled =_='
+      debug 'not set throttled =_='
       @close 1000, 'e04'
       return
 
     settings.max-fps = settings.init-fps
-    console.log 'settings: ', settings
+    debug 'settings: ', settings
     frame-queue = []
 
     # create SDK ws & cloud ws
@@ -71,7 +72,7 @@ module.exports = do
 
     # cleanup
     to-sdk.on 'close', ->
-      console.log 'sdk ws close. also close cloud ws'
+      debug 'sdk ws close. also close cloud ws'
       to-cloud.close 1000, 'close ws by adserver' # shutdown the other websocket
       delete throttled-cids[cid]                  # deregister this cid
 
