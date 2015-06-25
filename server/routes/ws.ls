@@ -37,8 +37,8 @@ module.exports = do
     debug 'websocket proxy to cloud!'
     {cid, orig_host} = URL.parse(@path, true).query
     settings = throttled-cids[cid]
-    get-data = R.nth-arg 0
     debug 'orig host: ', orig_host, "ws://#orig_host#{ @path }"
+    get-first-arg = R.nth-arg 0
 
     if not settings
       debug 'not set throttled =_='
@@ -55,10 +55,10 @@ module.exports = do
 
     # we don't throttle the SDK->cloud direction, simply proxy the messages
     # frame control will use this
-    to-sdk.on 'message', get-data >> to-cloud~send
+    to-sdk.on 'message', get-first-arg >> to-cloud~send
 
     # (producer) once receive data from cloud, put it into a buffer
-    to-cloud.on 'message', get-data >> frame-queue~push
+    to-cloud.on 'message', get-first-arg >> frame-queue~push
 
     # (consumer) deque and send data to SDK according to current max-fps
     schedual-next = ->
