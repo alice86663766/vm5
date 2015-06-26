@@ -119,6 +119,17 @@ This saves cloud resource and reduce network impact, however it's more non-reali
 
             { "result": "ok" }
 
+## corrupted video frames [/v3/trial/set-next-video-frames-corrupted/:cid]
+
+Make the video websocket send corrupted, un-decodable video content, in 30 fps.
+
+### set video frames corrupted [GET]
+
+
++ Response 200 (application/json)
+
+            { "result": "ok" }
+
 ## throttable [/v3/trial/set-next-throttlable/:cid]
 
 Make the video websocket throttable. If this API is called before call `/v3/trial`, then
