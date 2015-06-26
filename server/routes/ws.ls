@@ -20,6 +20,15 @@ create-pre-recorded-ws = (frames) -> ->*
     frame-count++
   , 1000 / 30
 
+corruped-video-ws = ->*
+  intervalId = setInterval ~>
+    if @readyState isnt WebSocket.OPEN
+      clearInterval intervalId
+      @close!
+      return
+    @send new Buffer 'This is not a valid h.264 frame'
+  , 1000 / 30
+
 proxy-ws = (next) ->*
   debug 'websocket proxy to cloud!'
   # parse & check
@@ -115,6 +124,8 @@ module.exports = do
 
   pre-recorded-landscape: route.all '/v3/pre-recorded-landscape', create-pre-recorded-ws landscape-video-frames
   pre-recorded-portrait:  route.all '/v3/pre-recorded-portrait',  create-pre-recorded-ws portrait-video-frames
+
+  corrupt-video: route.all '/v3/corrupted-video', corruped-video-ws
 
   # though koa-route doesn't support middleware, we can use koa-compose to implement ours
   proxy-audio: route.all '/?(.*)type=audio(.*)', ->*

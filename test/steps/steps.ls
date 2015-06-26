@@ -56,6 +56,7 @@ module.exports = English.library dictionary
     next e
 
 .then "I expect response of trial to contain $json", (json, next) ->
+  json = json.replace 'WS_ENDPOINT', server.ws-endpoint
   expect(server.call-trial!).to.eventually
   .containSubset(parseValue json).notify next
 

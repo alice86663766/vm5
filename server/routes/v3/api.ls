@@ -3,7 +3,7 @@ require! 'http-status'
 require! '../the-matrix': M
 require! url: URL
 debug = require('debug')('adserver-mock')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids, corrupted-video-cids} = M
 
 module.exports = do
 
@@ -67,6 +67,9 @@ module.exports = do
 
       if delete pre-recorded-cids[cid] and ss = @body.streams
         ss.video_ws = "ws://#{@host}/v3/pre-recorded-#{@body.orientation}"
+
+      if delete corrupted-video-cids[cid] and ss = @body.streams
+        ss.video_ws = "ws://#{@host}/v3/corrupted-video"
 
       if throttled-cids[cid] and ss = @body.streams
         for type in ['video' 'audio' 'ctrl']

@@ -2,7 +2,7 @@ require! 'koa-router': koaRouter
 require! './the-matrix': M
 require! events: {EventEmitter}
 debug = require('debug')('adserver-control:control')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids, corrupted-video-cids} = M
 
 router = koaRouter!
 
@@ -53,6 +53,11 @@ router.get '/v3/trial/set-next-novm-on-connect-ws/:cid', (next) ->*
 router.get '/v3/trial/set-next-pre-recorded/:cid', (next) ->*
   {cid} = @params
   pre-recorded-cids[cid] = true
+  @body = result: 'ok'
+
+router.get '/v3/trial/set-next-video-frames-corrupted/:cid', (next) ->*
+  {cid} = @params
+  corrupted-video-cids[cid] = true
   @body = result: 'ok'
 
 UNLIMITED_FPS = 100

@@ -7,6 +7,7 @@ request = Promise.promisify request
 class FakeServer
   host = 'localhost:3500'
   endpoint: "http://#host"
+  ws-endpoint: "ws://#host"
   cid = 'xxx'
   last-request: null
   call-api: (api) ~>

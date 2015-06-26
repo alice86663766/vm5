@@ -48,6 +48,15 @@ Scenario: pre-recorded video websocket works
   And I connect video ws of trial for 2 seconds
   Then I expect about 60 +- 5 frames received
 
+Scenario: corrupt video websocket changes ws url
+  When I successfully call /v3/trial/set-next-video-frames-corrupted
+  Then I expect response of trial to contain {streams: {video_ws: 'WS_ENDPOINT/v3/corrupted-video'}}
+
+Scenario: corrupt video websocket works
+  When I successfully call /v3/trial/set-next-video-frames-corrupted
+  And I connect video ws of trial for 2 seconds
+  Then I expect about 60 +- 5 frames received
+
 Scenario: set next trial throttable
   When I successfully call /v3/trial/set-next-throttlable
   And I connect video ws of trial for 3 seconds with last 2 seconds throttled to 10 fps
