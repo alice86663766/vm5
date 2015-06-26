@@ -102,6 +102,8 @@ router.get '/v3/trial/terminate-:wstype-ws/:cid', (next) ->*
   throttled-cids[cid].emit "terminate-#wstype"
   @body = result: 'ok'
 
+# Auxiliry API
+
 router.get '/v3/debug/M', ->*
   @body = M
 
