@@ -5,11 +5,12 @@ require! assert
 request = Promise.promisify request
 
 class FakeServer
-  endpoint = 'http://localhost:3500'
+  host = 'localhost:3500'
+  endpoint: "http://#host"
   cid = 'xxx'
   last-request: null
   call-api: (api) ~>
-    @last-request = request url: "#endpoint#api/#cid", json: true
+    @last-request = request url: "#{@endpoint}#api/#cid", json: true
     @last-resp-body!
   last-resp-code: ~>
     @last-request.spread (resp, body) -> resp.statusCode
@@ -18,7 +19,7 @@ class FakeServer
   call-trial: ~>
     @last-request = request do
       method: 'post'
-      url: "#endpoint/v3/trial"
+      url: "#{@endpoint}/v3/trial"
       headers:
         'Content-Type': 'application/json'
         'VM5-Api-Token': 'DRriVum2AbTUxEso1fgczFf5mkLa8l75'
@@ -30,7 +31,7 @@ class FakeServer
     @last-resp-body!
   call-campaigns: ~>
     @last-request = request do
-      url: "#endpoint/v3/campaigns"
+      url: "#{@endpoint}/v3/campaigns"
       headers:
         'Content-Type': 'application/json'
         'VM5-Api-Token': 'DRriVum2AbTUxEso1fgczFf5mkLa8l75'
