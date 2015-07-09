@@ -1,9 +1,10 @@
 require! './proxy'
 require! 'http-status'
+require! bluebird: Promise
 require! '../the-matrix': M
 require! url: URL
 debug = require('debug')('adserver-mock')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids, corrupted-video-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, delay-cids, broken-icon-cids, campaigns-novm-cids, corrupted-video-cids} = M
 
 module.exports = do
 
@@ -37,6 +38,9 @@ module.exports = do
         @status = code
         @body = message: http-status[code]
         return
+
+      if n = delete delay-cids[cid]
+        yield Promise.delay n * 1000
 
       if delete novm-cids[cid]
         @status = 404

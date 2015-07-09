@@ -2,7 +2,7 @@ require! 'koa-router': koaRouter
 require! './the-matrix': M
 require! events: {EventEmitter}
 debug = require('debug')('adserver-control:control')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, broken-icon-cids, campaigns-novm-cids, corrupted-video-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, delay-cids, broken-icon-cids, campaigns-novm-cids, corrupted-video-cids} = M
 
 router = koaRouter!
 
@@ -34,6 +34,11 @@ router.get '/v3/trial/set-next-image-link-corrupt/:cid', (next) ->*
 router.get '/v3/trial/set-next-status-code-:code/:cid', (next) ->*
   {cid, code} = @params
   status-code-cids[cid] = +code
+  @body = result: 'ok'
+
+router.get '/v3/trial/set-next-deplay-:n-sec/:cid', (next) ->*
+  {cid, n} = @params
+  delay-cids[cid] = +n
   @body = result: 'ok'
 
 # campaign related API

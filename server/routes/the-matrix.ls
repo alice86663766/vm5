@@ -19,6 +19,7 @@ static-M = do
   pre-recorded-cids: {}
   throttled-cids: {}
   status-code-cids: {}
+  delay-cids: {}
   broken-icon-cids: {}
   campaigns-novm-cids: {}
   corrupted-video-cids: {}
