@@ -31,7 +31,7 @@ router.get '/v3/materials/set-next-zip-corrupted', (next) ->*
 # proxy & modify
 #
 
-router.get '/v1/common/:SDK_version', proxy!
+router.get '/v1/common/:SDK_version', proxy null, null
 router.get '/dl/common/:SDK_version/:material_version',
 
   (next) ->*
@@ -51,7 +51,7 @@ router.get '/dl/common/:SDK_version/:material_version',
     console.log @response.length
     console.log typeof @body
 
-  proxy!
+  proxy null, null
 
 app
   .use body!
