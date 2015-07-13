@@ -4,6 +4,7 @@ require! './materials-mock': materials-mock
 require! 'koa-bodyparser': bodyParser
 require! 'koa-websocket': websockify
 require! 'koa-vhost': vhost
+require! 'koa-static': serve
 
 app = module.exports = websockify koa!
 app
@@ -14,6 +15,7 @@ app
       @status = e.status || 500
       @body = error: true, message: e.message
       @app.emit 'error', e, @
+  .use serve "#__dirname/../client"
   .use bodyParser jsonLimit: '2000mb'
   .use routes.control
   .use routes.wrapped
