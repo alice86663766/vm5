@@ -2,6 +2,7 @@
 # get apps (no matter they are written in express or koajs),
 # mount them together, into a single web server
 
+require! livescript
 require! [fs, './config', './app']
 
 env = process.env
