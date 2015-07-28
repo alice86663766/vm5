@@ -10,5 +10,6 @@ defroute = (verb, path) ->
 defroute post, '/v3/trial'
 defroute get,  '/v3/campaigns'
 defroute get,  '/v3/campaigns/:ad_id'
+defroute get,  '/v3/ping'
 
 module.exports = router.routes!

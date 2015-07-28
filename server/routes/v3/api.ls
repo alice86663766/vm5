@@ -113,3 +113,7 @@ module.exports = do
         @body.ready = 0
 
     proxy('/v3/campaigns/:ad_id')
+
+  '/v3/ping': [
+    proxy('/v3/ping')
+  ]
