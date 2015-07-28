@@ -1,0 +1,42 @@
+/* ########################################################################################## */
+/* Containers */
+
+.fill {
+	padding-top: 30px;
+}
+
+/* ########################################################################################## */
+/* Padding, Border, Margin */
+
+.no-padding {
+  padding: 0 !important;
+}
+
+.no-margin {
+  margin: 0 !important;
+}
+
+/* ########################################################################################## */
+/* font-size  */
+
+.title-font {
+	font-size: 60px;
+}
+
+.category-bigger {
+	font-size: 18px;
+}
+
+.api-font {
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.input-padding {
+	padding-left: 0px;
+}
+
+.badge {
+	background-color: #66A366 !important;
+	font-weight: 500;
+}
