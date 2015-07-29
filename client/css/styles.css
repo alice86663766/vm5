@@ -32,6 +32,10 @@
 	font-weight: 500;
 }
 
+.left-padding{
+	padding-left: 30px
+}
+
 .input-padding {
 	padding-left: 0px;
 }

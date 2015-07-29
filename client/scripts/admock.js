@@ -76,7 +76,14 @@ var CategoryList = React.createClass({
         url = url.replace(/:code/, $("#Code").val());
         url = url.replace(/:initfps/, $("#InitfpsFps").val());
         url = url.replace(/:fps/, $("#FpsFps").val());
-        $.get(url);
+        $.get(url, function(data,status){
+            // if (!data) {
+            //     alert("You should key in something in Parameters-Panel");
+            // }
+            console.log('data: ' + data.result +', '+data[1]);
+            console.log('status: ' + status);
+            console.log(data);
+        });
     },
     render: function(){
         var trigger = this.trigger;
@@ -153,15 +160,24 @@ var InputBox = React.createClass({
 
 var DebugPanel = React.createClass({
     render: function(){
-        var array_apiinfo = [];
+        var array_status = [];
         for (api in this.props.data) {
-            var array_apistatus = [];
-            for (status in this.props.data[api]) {
-                array_apistatus.push(status);
+            var array_cids = [];
+            for (cid in this.props.data[api]) {
+                var array_cidinfo = [];
+                if (typeof this.props.data[api][cid] !== 'object') {
+                    array_cidinfo.push({dataname: 'result', data: this.props.data[api][cid].toString()});
+                }
+                else {
+                    for (info in this.props.data[api][cid]) {
+                        array_cidinfo.push({dataname:info, data: this.props.data[api][cid][info]});
+                    }
+                }
+                array_cids.push({cid: cid, info: array_cidinfo});
             }
-            array_apiinfo.push({name: api, status: array_apistatus});
+            array_status.push({name: api, cid: array_cids});
         };
-        var debugNodes = array_apiinfo.map(function(api){
+        var debugNodes = array_status.map(function(api){
             return (
                 <StatusInformation data={api} />
             );
@@ -178,11 +194,16 @@ var DebugPanel = React.createClass({
                         <table className="table table-striped no-margin">                            
                             <thead>
                                 <tr>
-                                    <th className="col-md-4">
-                                        Status
+                                    <th className="col-xs-4">
+                                        APIs
                                     </th>
-                                    <th className="col-md-8">
-                                        Cids
+                                    <th className="col-xs-8">
+                                        <div className="col-xs-5 no-padding">
+                                            Cids
+                                        </div>
+                                        <div className="col-xs-7 left-padding">
+                                            Status
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -199,18 +220,19 @@ var DebugPanel = React.createClass({
 
 var StatusInformation = React.createClass({
     render: function() {
-        var statusNodes = this.props.data.status.map(function(data){
+        var statusNodes = this.props.data.cid.map(function(data){
             return (
                 <Status data={data} />
             );
         });
+
         return (
             <div className="StatusInformation">                
                 <tr>
-                    <td className="col-md-4">
+                    <td className="col-xs-4">
                         {this.props.data.name}
                     </td>
-                    <td className="col-md-8">
+                    <td className="col-xs-8">
                         {statusNodes}
                     </td>
                 </tr>
@@ -221,13 +243,40 @@ var StatusInformation = React.createClass({
 
 var Status = React.createClass({
     render: function() {
+        var infoNodes = this.props.data.info.map(function(data){
+            return (
+                <CidInfo data={data} />
+            );
+        });
         return (
             <div className="Status">
-                {this.props.data}
+                <div className="col-xs-5 no-padding">
+                    {this.props.data.cid}
+                </div>
+                <div className="col-xs-7">
+                    {infoNodes}
+                </div>
             </div>
         );
     }
-})
+});
+
+
+
+var CidInfo = React.createClass({
+    render: function(){
+        return (
+            <div className="CidInfo">
+                <div className="col-xs-9">
+                    {this.props.data.dataname}
+                </div>
+                <div className="col-xs-3">
+                    {this.props.data.data}
+                </div>
+            </div>
+        );
+    }
+});
 
 React.render(
   <ApiBoard url="apiInfo.json" pullInterval={500} />,
