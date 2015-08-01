@@ -76,13 +76,14 @@ var CategoryList = React.createClass({
         url = url.replace(/:code/, $("#Code").val());
         url = url.replace(/:initfps/, $("#InitfpsFps").val());
         url = url.replace(/:fps/, $("#FpsFps").val());
-        $.get(url, function(data,status){
-            // if (!data) {
-            //     alert("You should key in something in Parameters-Panel");
-            // }
-            console.log('data: ' + data.result +', '+data[1]);
-            console.log('status: ' + status);
-            console.log(data);
+
+        $.ajax({
+            url: url,
+            dataType: 'json',
+            cache: false,
+            error: function(xhr, status, err) {
+                alert("You should press parameter!");
+            }.bind(this)
         });
     },
     render: function(){
