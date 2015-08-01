@@ -82,7 +82,7 @@ var CategoryList = React.createClass({
             dataType: 'json',
             cache: false,
             error: function(xhr, status, err) {
-                alert("You should press parameter!");
+                alert("Please enter your parameter!");
             }.bind(this)
         });
     },
