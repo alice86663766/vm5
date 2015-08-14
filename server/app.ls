@@ -5,9 +5,11 @@ require! 'koa-bodyparser': bodyParser
 require! 'koa-websocket': websockify
 require! 'koa-vhost': vhost
 require! 'koa-static': serve
+require! 'koa-cors': cors
 
 app = module.exports = websockify koa!
 app
+  .use cors!
   .use (next) ->*
     try
       yield next

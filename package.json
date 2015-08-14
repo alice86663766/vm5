@@ -28,6 +28,7 @@
     "koa-body": "^1.2.1",
     "koa-bodyparser": "^1.5.0",
     "koa-compose": "^2.3.0",
+    "koa-cors": "0.0.16",
     "koa-logger": "^1.2.0",
     "koa-pixie-proxy": "^1.0.7",
     "koa-route": "^2.4.1",
