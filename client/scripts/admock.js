@@ -30,7 +30,7 @@ var ApiBoard = React.createClass({
         return {data: []};
     },
     componentDidMount: function() {
-        this.loadApisInformation();        
+        this.loadApisInformation();
         setInterval(this.getAndLoadApisStatus, this.props.pullInterval);
     },
     render: function(){
@@ -60,7 +60,7 @@ var ApiBoard = React.createClass({
                         {categoryWebsocket}
                     </div>
                 </div>
-                <div className="col-lg-6 fill">                    
+                <div className="col-lg-6 fill">
                     <InputboxPanel />
                     <DebugPanel data={this.state.statusinfo} />
                 </div>
@@ -261,8 +261,6 @@ var Status = React.createClass({
         );
     }
 });
-
-
 
 var CidInfo = React.createClass({
     render: function(){
