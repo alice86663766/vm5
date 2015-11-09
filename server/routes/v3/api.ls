@@ -79,7 +79,7 @@ module.exports = do
         for type in ['video' 'audio' 'ctrl']
           key = type + '_ws'
           {path, host} = URL.parse ss[key]
-          ss[key] = "ws://#{ @host + path }&cid=#{ cid }&orig_host=#{ host }&type=#{ type }"
+          ss[key] = "ws://#{ @host + path }&cid=#{ encodeURIComponent cid }&orig_host=#{ encodeURIComponent host }&type=#{ encodeURIComponent type }"
         debug ss
 
     proxy('/v3/trial')
