@@ -23,6 +23,7 @@ static-M = do
   broken-icon-cids: {}
   campaigns-novm-cids: {}
   campaigns-corrupted-image-cids: {}
+  campaigns-lang-cids: {}
   corrupted-video-cids: {}
 
 module.exports = if process.env.NODE_ENV is 'development' then dynamic-M else static-M

@@ -102,6 +102,15 @@ These APIs all take a `cid` parameter, which indicate the adserve mock to do som
 
             { "result": "ok" }
 
+## set lang [/v3/campaigns/set-next-lang-to-:lang/:cid]
+
+### set language [GET]
+
+
++ Response 200 (application/json)
+
+            { "result": "ok" }
+
 ## Group WebSocket
 
 ## no vm [/v3/trial/set-next-novm-on-connect-ws/:cid]

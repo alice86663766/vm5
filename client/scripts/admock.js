@@ -76,6 +76,7 @@ var CategoryList = React.createClass({
         url = url.replace(/:code/, $("#Code").val());
         url = url.replace(/:initfps/, $("#InitfpsFps").val());
         url = url.replace(/:fps/, $("#FpsFps").val());
+        url = url.replace(/:lang/, $("#Lang").val());
 
         $.ajax({
             url: url,
@@ -121,7 +122,7 @@ var ApisInfo = React.createClass({
 
 var InputboxPanel = React.createClass({
     render: function(){
-        var index = ['Secs', 'Code', 'InitfpsFps', 'FpsFps'];
+        var index = ['Secs', 'Code', 'InitfpsFps', 'FpsFps', 'Lang'];
         var inputNodes = index.map(function(index){
             return (
                 <InputBox data={index} />

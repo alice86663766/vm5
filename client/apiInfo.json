@@ -38,6 +38,10 @@
 			{
 				"name": "Corrupt Image Link",
 				"url": "/v3/campaigns/set-next-image-link-corrupt/:cid"
+			},
+			{
+				"name": "Set Language",
+				"url": "/v3/campaigns/set-next-lang-to-:lang/:cid"
 			}
 		]
 	},

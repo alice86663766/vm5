@@ -4,7 +4,7 @@ require! bluebird: Promise
 require! '../the-matrix': M
 require! url: URL
 debug = require('debug')('adserver-mock')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, delay-cids, broken-icon-cids, campaigns-novm-cids, campaigns-corrupted-image-cids, corrupted-video-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, delay-cids, broken-icon-cids, campaigns-novm-cids, campaigns-corrupted-image-cids, campaigns-lang-cids, corrupted-video-cids} = M
 
 module.exports = do
 
@@ -102,6 +102,9 @@ module.exports = do
         @body.for-each (cmp) ->
           cmp.icon = cmp.background = cmp.blur = 'http://gg.img'
 
+      if lang = delete campaigns-lang-cids[cid]
+        @body.for-each (cmp) -> cmp.lang = lang
+
     proxy('/v3/campaigns')
 
   '/v3/campaigns/:ad_id':
@@ -120,6 +123,9 @@ module.exports = do
 
       if delete campaigns-corrupted-image-cids[cid]
         @body.icon = @body.background = @body.blur = 'http://gg.img'
+
+      if lang = delete campaigns-lang-cids[cid]
+        @body.lang = lang
 
     proxy('/v3/campaigns/:ad_id')
 
