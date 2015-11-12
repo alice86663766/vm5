@@ -37,6 +37,10 @@ Scenario: set next campaign no vm
   When I successfully call /v3/campaigns/set-next-novm
   Then I expect all campaigns of response contain {ready : 0}
 
+Scenario: set next campaign image link corrupt
+  When I successfully call /v3/campaigns/set-next-image-link-corrupt
+  Then I expect all campaigns of response contain {background: 'http://gg.img', icon : 'http://gg.img', blur: 'http://gg.img'}
+
 # websocket related tests
 
 Scenario: set next trial no vm on connect ws

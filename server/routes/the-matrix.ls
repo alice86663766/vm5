@@ -22,6 +22,7 @@ static-M = do
   delay-cids: {}
   broken-icon-cids: {}
   campaigns-novm-cids: {}
+  campaigns-corrupted-image-cids: {}
   corrupted-video-cids: {}
 
 module.exports = if process.env.NODE_ENV is 'development' then dynamic-M else static-M

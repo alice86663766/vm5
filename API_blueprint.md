@@ -62,7 +62,7 @@ These APIs all take a `cid` parameter, which indicate the adserve mock to do som
 
 ## corrupt image link [/v3/trial/set-next-image-link-corrupt/:cid]
 
-### set background & icon image link corrupt [GET]
+### set background, icon & blur image link corrupt [GET]
 
 
 + Response 200 (application/json)
@@ -87,6 +87,15 @@ These APIs all take a `cid` parameter, which indicate the adserve mock to do som
 ## no vm [/v3/campaigns/set-next-novm/:cid]
 
 ### set ready number to 0 [GET]
+
+
++ Response 200 (application/json)
+
+            { "result": "ok" }
+
+## corrupt image link [/v3/campaigns/set-next-image-link-corrupt/:cid]
+
+### set background, icon & blur image link corrupt [GET]
 
 
 + Response 200 (application/json)

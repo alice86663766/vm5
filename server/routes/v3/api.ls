@@ -4,7 +4,7 @@ require! bluebird: Promise
 require! '../the-matrix': M
 require! url: URL
 debug = require('debug')('adserver-mock')
-{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, delay-cids, broken-icon-cids, campaigns-novm-cids, corrupted-video-cids} = M
+{novm-cids, expired-cids, not-yours-cids, ws-novm-cids, timelimit-cids, download-fail-cids, pre-recorded-cids, throttled-cids, status-code-cids, delay-cids, broken-icon-cids, campaigns-novm-cids, campaigns-corrupted-image-cids, corrupted-video-cids} = M
 
 module.exports = do
 
@@ -91,11 +91,16 @@ module.exports = do
 
       yield next
 
+      # I don't know why body parser not working here
+      # so I have to explicitly parse body
+      @body = JSON.parse @body
+
       if delete campaigns-novm-cids[cid]
-        # I don't know why body parser not working here
-        # so I have to explicitly parse body
-        @body = JSON.parse @body
         @body.for-each (cmp) -> cmp.ready = 0
+
+      if delete campaigns-corrupted-image-cids[cid]
+        @body.for-each (cmp) ->
+          cmp.icon = cmp.background = cmp.blur = 'http://gg.img'
 
     proxy('/v3/campaigns')
 
@@ -106,11 +111,15 @@ module.exports = do
 
       yield next
 
+      # I don't know why body parser not working here
+      # so I have to explicitly parse body
+      @body = JSON.parse @body
+
       if delete campaigns-novm-cids[cid]
-        # I don't know why body parser not working here
-        # so I have to explicitly parse body
-        @body = JSON.parse @body
         @body.ready = 0
+
+      if delete campaigns-corrupted-image-cids[cid]
+        @body.icon = @body.background = @body.blur = 'http://gg.img'
 
     proxy('/v3/campaigns/:ad_id')
 
