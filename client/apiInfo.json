@@ -34,6 +34,10 @@
 			{
 				"name": "No Vm",
 				"url": "/v3/campaigns/set-next-novm/:cid"
+			},
+			{
+				"name": "Corrupt Image Link",
+				"url": "/v3/campaigns/set-next-image-link-corrupt/:cid"
 			}
 		]
 	},
