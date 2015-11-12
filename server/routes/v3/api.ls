@@ -67,7 +67,7 @@ module.exports = do
         ss.video_ws = ss.audio_ws = ss.ctrl_ws = "ws://#{@host}/v3/mimic-novm-ws"
 
       if delete download-fail-cids[cid]
-        @body.icon = @body.background = 'http://gg.img'
+        @body.icon = @body.background = @body.blur = 'http://gg.img'
 
       if delete pre-recorded-cids[cid] and ss = @body.streams
         ss.video_ws = "ws://#{@host}/v3/pre-recorded-#{@body.orientation}"
