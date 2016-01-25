@@ -17,6 +17,11 @@ app
       @status = e.status || 500
       @body = error: true, message: e.message
       @app.emit 'error', e, @
+  .use (next) ->*
+    return yield next if not @headers.'accept-encoding'
+    encoding = delete @headers.'accept-encoding'
+    yield next
+    @headers.'accept-encoding' = encoding
   .use serve "#__dirname/../client"
   .use bodyParser jsonLimit: '2000mb'
   .use routes.control
