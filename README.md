@@ -22,6 +22,22 @@ we provide an [online version](mock.adserver.vm5apis.com/docs).
 
 or you can run a local adserver-mock, then visit [this](http://localhost:3500/docs)
 
+besides Web API, it also provide Web UI, so it can help manually testing as well.
+
+
+## Usage
+
+the classic scenario is like:
+
+1. configure environment, let testing target to interact with adserver-mock instead of the real adserver.
+   this is often achieved by change DNS setting or set a HTTP proxy.
+2. get `cid` of test target environment.
+3. setup response of adserver-mock with `cid`. adserver-mock will use this `cid` to identify each client.
+   you can do it via API call, or adserver-mock's Web UI
+4. drive test target to interact with adserver-mock.
+5. verify test target behaves like what you expected.
+
+
 
 ## Configuration
 
