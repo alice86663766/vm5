@@ -41,8 +41,8 @@ the classic scenario is like:
 
 ## Configuration
 
-port can be configure via environment variable `PORT`. it's default to 3500.
-
+1. port can be configure via environment variable `PORT`. it's default to 3500.
+2. adserver host can be configure via environment variable `adserver_host`. it's default to "http://api-adserver.vm5apis.com"
 
 ## Installation & run
 
@@ -55,7 +55,7 @@ directly run node.js
 ## Tests
 
 first you need to run an local adserver-mock:
-
+OB
     npm start
     
 then you can run test against it:
