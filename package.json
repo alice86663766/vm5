@@ -4,7 +4,7 @@
   "description": "adserver mock for testing",
   "main": "server/app.ls",
   "engines": {
-    "node": ">= 11.3"
+    "node": ">= 4"
   },
   "scripts": {
     "start": "lsc -c server/index.ls; node --harmony --harmony-proxies server/index.js",
