@@ -1,9 +1,0 @@
----
-- hosts: vm5-adserver-docs
-  tasks:
-    - name: upgrade adserver doc
-      command: chdir=~/adserver /usr/bin/git pull origin master
-    - name: restart doc process
-      command: pm2 reload adserver-doc
-    - name: restart internal doc process
-      command: pm2 reload adserver-internal-doc
