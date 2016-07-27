@@ -1,0 +1,72 @@
+{
+	"language": {
+		"type": "textInput",
+		"url": "/v3/campaigns/set-next-lang-to-:lang/:cid"
+	},
+
+	"timeLimit": {
+		"type": "textInput",
+		"url": "/v3/trial/set-next-timelimit-:n-secs/:cid"
+	},
+
+	"httpResponse": {
+		"type": "textInput",
+		"url": "/v3/trial/set-next-status-code-:code/:cid"
+	},
+
+	"noVm": {
+		"type": "select",
+		"url": {
+			"Campaign phase": "/v3/campaigns/set-next-novm/:cid",
+			"Trial phase": "/v3/trial/set-next-novm/:cid",
+			"Web connection phase": "/v3/trial/set-next-novm-on-connect-ws/:cid"
+		}
+	},
+	
+	"vmExpired": {
+		"type": "checkbox",
+		"url": "/v3/trial/set-next-expired/:cid"
+	},
+	
+	"vmNotYours": {
+		"type": "checkbox",
+		"url": "/v3/trial/set-next-not-yours/:cid"
+	},
+	
+	"imgCorrupts": {
+		"type": "select",
+		"url": {
+			"Campaign phase": "/v3/campaigns/set-next-image-link-corrupt/:cid",
+			"Trial phase": "/v3/trial/set-next-image-link-corrupt/:cid"
+		}
+		
+	},
+	
+	"videoCorrupts": {
+		"type": "checkbox",
+		"url": "/v3/trial/set-next-video-frames-corrupted/:cid"
+	},
+	
+	"preRecordedVideo": {
+		"type": "checkbox",
+		"url": "/v3/trial/set-next-pre-recorded/:cid"
+	},
+
+	"introPoor": {
+		"type": "checkbox",
+		"url": "/v3/trial/set-next-throttled-to-3-fps/:cid"
+	},
+
+	"webItems": {
+		"timeZero": {
+			"Poor connection": "/v3/trial/set-next-throttled-to-:initfps-fps/:cid" 
+		},
+		"others": {
+			"No speed limit": "/v3/trial/stop-throttle-ws/:cid", 
+			"Poor connection": "/v3/trial/start-throttle-ws-to-:fps-fps/:cid",
+			"Terminate video socket": "/v3/trial/terminate-video-ws/:cid",
+			"Terminate audio socket": "/v3/trial/terminate-audio-ws/:cid",
+			"Terminate control socket": "/v3/trial/terminate-ctrl-ws/:cid"
+		}
+	}
+}

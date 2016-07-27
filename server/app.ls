@@ -26,7 +26,7 @@ app
   .use bodyParser jsonLimit: '2000mb'
   .use routes.control
   .use routes.wrapped
-  .use routes.doc
+ # .use routes.doc
   .use vhost materials-mock.host, materials-mock
 
 app.ws.use routes.ws.handle-error

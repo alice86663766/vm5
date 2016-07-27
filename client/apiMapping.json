@@ -1,0 +1,61 @@
+{
+	"campaignsLangCids": {
+		"display": "Language",
+		"textinput": true
+	},
+
+	"timelimitCids": {
+		"display": "Time Limit",
+		"textinput": true
+	},
+
+	"statusCodeCids": {
+		"display": "HTTP Response Code",
+		"textinput": true
+	},
+
+	"campaignsNovmCids": {
+		"display": "No VM (Campaign)",
+		"textinput": false
+	},
+
+	"novmCids": {
+		"display": "No VM (Trial)",
+		"textinput": false
+	},
+
+	"wsNovmCids": {
+		"display": "No VM (Web Socket)",
+		"textinput": false
+	},
+	
+	"expiredCids": {
+		"display": "VM Expired (Trial)",
+		"textinput": false
+	},
+	
+	"notYoursCids": {
+		"display": "VM Not Yours",
+		"textinput": false
+	},
+	
+	"campaignsCorruptedImageCids": {
+		"display": "Image Corrupts (Campaign)",
+		"textinput": false
+	},
+	
+	"downloadFailCids": {
+		"display": "Image Corrupts (Trial)",
+		"textinput": false
+	},
+	
+	"corruptedVideoCids": {
+		"display": "Video Corrupts",
+		"textinput": false
+	},
+	
+	"preRecordedCids": {
+		"display": "Send Pre-recorded Video",
+		"textinput": false
+	}
+}
