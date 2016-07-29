@@ -14,6 +14,16 @@
 		"textinput": true
 	},
 
+	"expiredCids": {
+		"display": "Campaign Expired (Trial)",
+		"textinput": false
+	},
+
+	"campaignsExpiredCids": {
+		"display": "Campaign Expired (Campaign)",
+		"textinput": false
+	},
+
 	"campaignsNovmCids": {
 		"display": "No VM (Campaign)",
 		"textinput": false
@@ -26,11 +36,6 @@
 
 	"wsNovmCids": {
 		"display": "No VM (Web Socket)",
-		"textinput": false
-	},
-	
-	"expiredCids": {
-		"display": "VM Expired (Trial)",
 		"textinput": false
 	},
 	

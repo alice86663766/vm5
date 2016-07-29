@@ -156,33 +156,7 @@
 	var Chart = _react2.default.createClass({
 	    displayName: 'Chart',
 
-	    getInitialState: function getInitialState() {
-	        return { time: 60, flagPoints: [{ x: 0, text: 'No speed limit', title: 'No speed limit' }] };
-	    },
-	    loadTime: function loadTime() {
-	        _jquery2.default.ajax({
-	            url: this.props.url,
-	            dataType: 'json',
-	            cache: false,
-	            success: function (data) {
-	                var debugTimeLimit = '';
-	                if (data.timelimitCids[this.props.cid]) {
-	                    //console.log("Load api time");
-	                    debugTimeLimit = data.timelimitCids[this.props.cid];
-	                    debugTimeLimit = parseFloat(debugTimeLimit);
-	                    //console.log(debugTimeLimit);
-	                    this.setState({ time: debugTimeLimit });
-	                } else {
-	                    this.setState({ time: 60 });
-	                }
-	            }.bind(this),
-	            error: function (xhr, status, err) {
-	                console.log(this.props.url, status, err.toString());
-	            }.bind(this)
-	        });
-	    },
 	    componentDidMount: function componentDidMount() {
-	        setInterval(this.loadTime, this.props.pullInterval);
 	        console.log("In componenet did mount!");
 	        var options = {
 	            title: {
@@ -192,8 +166,8 @@
 	                title: {
 	                    text: 'Time(s)'
 	                },
-	                min: 0,
-	                max: this.state.time
+	                min: -3,
+	                max: this.props.time
 	            },
 	            yAxis: {
 	                title: {
@@ -208,7 +182,7 @@
 	            },
 	            series: [{
 	                name: 'Time vs fps',
-	                data: [{ x: 0, y: 100 }],
+	                data: [],
 	                step: 'left'
 	            }, {
 	                type: 'flags',
@@ -216,15 +190,21 @@
 	                color: '#333333',
 	                shape: 'squarepin',
 	                y: -55,
-	                data: [{ x: 0, text: 'No speed limit', title: 'No speed limit' }],
+	                data: [],
 	                showInLegend: false
 	            }]
 	        };
 	        this.chart = new Highcharts[this.props.type || "Chart"](this.props.container, options);
+	        this.chart.xAxis[0].setExtremes(-3, this.props.time);
 	    },
 	    //Destroy chart before unmount.
 	    componentWillUnmount: function componentWillUnmount() {
 	        this.chart.destroy();
+	    },
+	    componentWillReceiveProps: function componentWillReceiveProps(props) {
+	        this.chart.xAxis[0].setExtremes(-3, this.props.time);
+	        this.chart.series[0].setData(props.lineData);
+	        this.chart.series[1].setData(props.flagData);
 	    },
 	    /*componentWillReceiveProps: function(props) {
 	        console.log("a prop is sent in");
@@ -264,9 +244,6 @@
 	    },*/
 	    render: function render() {
 	        //console.log("chart data:", this.props.data);
-	        if (this.chart) {
-	            this.chart.xAxis[0].setExtremes(0, this.state.time);
-	        }
 	        return _react2.default.createElement('div', { id: this.props.container });
 	    }
 	});
@@ -275,42 +252,9 @@
 	    displayName: 'SettingsBlock',
 
 	    //Return API status
-	    loadApiStatus: function loadApiStatus() {
-	        _jquery2.default.ajax({
-	            url: this.props.url,
-	            dataType: 'json',
-	            cache: false,
-	            success: function (data) {
-	                this.setState({ data: data });
-	            }.bind(this),
-	            error: function (xhr, status, err) {
-	                console.log(this.props.url, status, err.toString());
-	            }.bind(this)
-	        });
-	    },
-	    loadApiMapping: function loadApiMapping() {
-	        _jquery2.default.ajax({
-	            url: '/apiMapping.json',
-	            dataType: 'json',
-	            cache: false,
-	            success: function (data) {
-	                this.setState({ mapping: data });
-	            }.bind(this),
-	            error: function (xhr, status, err) {
-	                console.log(this.props.url, status, err.toString());
-	            }.bind(this)
-	        });
-	    },
-	    getInitialState: function getInitialState() {
-	        return { data: [], mapping: [] };
-	    },
-	    componentDidMount: function componentDidMount() {
-	        this.loadApiMapping();
-	        setInterval(this.loadApiStatus, this.props.pullInterval); //only need to load status when submit -> can remove later
-	    },
 	    render: function render() {
-	        var debugStatus = this.state.data;
-	        var mapping = this.state.mapping;
+	        var debugStatus = this.props.data;
+	        var mapping = this.props.mapping;
 	        var cid = this.props.cid;
 	        var settings = [];
 	        //console.log(mapping);
@@ -376,9 +320,93 @@
 	var EventPanel = _react2.default.createClass({
 	    displayName: 'EventPanel',
 
-	    //type, container, options
-	    //setRootTime={this.props.setRootTime}
+	    loadApiStatus: function loadApiStatus() {
+	        _jquery2.default.ajax({
+	            url: this.props.url,
+	            dataType: 'json',
+	            cache: false,
+	            success: function (data) {
+	                this.setState({ data: data });
+	                var debugTimeLimit = '';
+	                if (data.timelimitCids[this.props.cid]) {
+	                    //console.log("Load api time");
+	                    debugTimeLimit = data.timelimitCids[this.props.cid];
+	                    debugTimeLimit = parseFloat(debugTimeLimit);
+	                    //console.log(debugTimeLimit);
+	                    this.setState({ time: debugTimeLimit });
+	                } else {
+	                    this.setState({ time: 60 });
+	                }
+	            }.bind(this),
+	            error: function (xhr, status, err) {
+	                console.log(this.props.url, status, err.toString());
+	            }.bind(this)
+	        });
+	    },
+	    loadApiMapping: function loadApiMapping() {
+	        _jquery2.default.ajax({
+	            url: '/apiMapping.json',
+	            dataType: 'json',
+	            cache: false,
+	            success: function (data) {
+	                this.setState({ mapping: data });
+	            }.bind(this),
+	            error: function (xhr, status, err) {
+	                console.log(this.props.url, status, err.toString());
+	            }.bind(this)
+	        });
+	    },
+	    componentDidMount: function componentDidMount() {
+	        this.loadApiMapping();
+	        setInterval(this.loadApiStatus, this.props.pullInterval);
+	    },
+	    getInitialState: function getInitialState() {
+	        return { time: 60, data: [], mapping: [] };
+	    },
 	    render: function render() {
+	        var objs = [];
+	        var lineData = [];
+	        var flagData = [];
+	        //{x: 0, text:'No speed limit', title:'No speed limit'}
+	        if (this.state.data.preScheduleCids && this.state.data.preScheduleCids[this.props.cid]) {
+	            objs = this.state.data.preScheduleCids[this.props.cid];
+	            var filtered = [];
+	            filtered = _.filter(objs, function (obj) {
+	                if (obj.type == "set-fps" || obj.type == "unthrottle") {
+	                    return true;
+	                } else {
+	                    return false;
+	                }
+	            });
+	            _.forEach(filtered, function (value, key) {
+	                var obj = { x: 0, y: 0 };
+	                var x = -3;
+	                var y = 100;
+	                if (value.delay) {
+	                    x = parseInt(value.delay) / 1000 - 3;
+	                }
+	                if (value.type == "set-fps") {
+	                    y = parseInt(value.params.fps);
+	                }
+	                obj.x = x;
+	                obj.y = y;
+	                lineData.push(obj);
+	            });
+	            filtered = _.filter(objs, function (obj) {
+	                if (obj.type == "terminate-ws") {
+	                    return true;
+	                } else {
+	                    return false;
+	                }
+	            });
+	            _.forEach(filtered, function (value, key) {
+	                var obj = { x: -3, text: "terminate-ws", title: "terminate-ws" };
+	                if (value.delay) {
+	                    obj.x = parseInt(value.delay) / 1000 - 3;
+	                }
+	                flagData.push(obj);
+	            });
+	        }
 	        var style = {
 	            eventPanel: {
 	                height: '625px'
@@ -391,8 +419,8 @@
 	        return _react2.default.createElement(
 	            _Paper2.default,
 	            { style: style.eventPanel },
-	            _react2.default.createElement(SettingsBlock, { cid: this.props.cid, url: this.props.url, pullInterval: 500 }),
-	            _react2.default.createElement(Chart, { container: 'webSettingChart', cid: this.props.cid, url: this.props.url, pullInterval: 500 })
+	            _react2.default.createElement(SettingsBlock, { cid: this.props.cid, url: this.props.url, pullInterval: this.props.pullInterval, time: this.state.time, data: this.state.data, mapping: this.state.mapping }),
+	            _react2.default.createElement(Chart, { container: 'webSettingChart', cid: this.props.cid, url: this.props.url, time: this.state.time, lineData: lineData, flagData: flagData })
 	        );
 	    }
 	});
@@ -414,7 +442,6 @@
 	        }
 	    },
 	    render: function render() {
-	        console.log("options:", this.props.options);
 	        var style = {
 	            radioButton: {
 	                display: 'inline-block',
@@ -537,35 +564,146 @@
 	            noError.noError = false;
 	        }
 	    },
+	    postWebRequests: function postWebRequests(url, cid, commands) {
+	        var data = {
+	            "cid": cid,
+	            "commands": commands
+	        };
+	        _jquery2.default.ajax({
+	            url: url,
+	            type: "POST",
+	            data: data,
+	            success: function (data) {
+	                console.log("ajax post return data:", data);
+	            }.bind(this),
+	            error: function (xhr, status, err) {
+	                alert("Error!!");
+	            }.bind(this)
+	        });
+	    },
+	    deleteRepeatCommand: function deleteRepeatCommand(commands, obj) {
+	        var conflict = false;
+	        //if (commands.length > 0) {
+	        commands = _.reject(commands, function (command) {
+	            if (command.trigger == "after-connect") {
+	                /*if (command.trigger == obj.trigger && command.type == "set-fps" && obj.type == "unthrottle" && command.delay == obj.delay) {
+	                    conflict = true;
+	                }*/
+	                if (obj.type == "set-fps") {
+	                    return command.trigger == obj.trigger && (command.type == "unthrottle" || command.type == "set-fps") && command.delay == obj.delay;
+	                } else if (command.trigger == obj.trigger && command.type == "set-fps" && obj.type == "unthrottle" && command.delay == obj.delay) {
+	                    conflict = true;
+	                }
+	                return command.trigger == obj.trigger && command.type == obj.type && command.delay == obj.delay;
+	            } else {
+	                return command.trigger == obj.trigger && command.type == obj.type;
+	            }
+	        });
+	        //}
+	        //commands.push(obj);
+	        if (!conflict) {
+	            commands.push(obj);
+	            console.log("pushed!", obj, commands);
+	        } else if (conflict) {
+	            console.log("conflict!");
+	        }
+	        return commands;
+	    },
 	    handleAdd: function handleAdd(e) {
 	        e.preventDefault();
 	        console.log("Added!");
-	        console.log(this.state);
 	        var passByReference = { noError: true };
-	        this.checkValidity("Start Time", "startTime", passByReference);
-	        if (this.state.action == "poor" || this.state.action == "set-fps") {
-	            this.checkValidity("Duration", "duration", passByReference);
-	            if (this.state.action == "set-fps") {
-	                this.checkValidity("Fps", "set-fps", passByReference);
+	        if (this.state.phase == "duringGame") {
+	            this.checkValidity("Start Time", "startTime", passByReference);
+	            if (this.state.action == "poor" || this.state.action == "set-fps") {
+	                this.checkValidity("Duration", "duration", passByReference);
+	                if (this.state.action == "set-fps") {
+	                    this.checkValidity("Fps", "fps", passByReference);
+	                }
 	            }
 	        }
-
-	        /*
-	        nextItems.sort(function(a, b) {
-	            return parseFloat(a.time) - parseFloat(b.time);
-	        });*/
+	        var commands = this.state.commands;
+	        var commandObj = {
+	            "trigger": "after-connect",
+	            "type": this.state.action,
+	            "delay": 0
+	        };
+	        var unthrottleObj = {
+	            "trigger": "after-connect",
+	            "type": "unthrottle",
+	            "delay": 0
+	        };
+	        var params = { "fps": 0 };
+	        if (this.state.phase == "intro") {
+	            if (this.state.action == "poor") {
+	                commandObj = {
+	                    "trigger": "on-connect",
+	                    "type": "set-fps",
+	                    "params": {
+	                        "fps": 2
+	                    }
+	                };
+	                unthrottleObj.delay = 3000;
+	                commands = this.deleteRepeatCommand(commands, commandObj);
+	                commands = this.deleteRepeatCommand(commands, unthrottleObj);
+	            } else {
+	                commandObj.delay = 1000;
+	                commands = this.deleteRepeatCommand(commands, commandObj);
+	            }
+	        } else if (this.state.phase == "duringGame") {
+	            if (this.state.action == "poor") {
+	                commandObj.type = "set-fps";
+	                params.fps = 10;
+	                commandObj["params"] = params;
+	                unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration)) * 1000;
+	            } else if (this.state.action == "set-fps") {
+	                params.fps = parseFloat(this.state.fps);
+	                commandObj["params"] = params;
+	                unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration)) * 1000;
+	            }
+	            commandObj.delay = (parseFloat(this.state.startTime) + 3) * 1000;
+	            commands = this.deleteRepeatCommand(commands, commandObj);
+	            if (unthrottleObj.delay != 0) {
+	                commands = this.deleteRepeatCommand(commands, unthrottleObj);
+	            }
+	        }
+	        commands.sort(function (a, b) {
+	            if (b.trigger == a.trigger) {
+	                if (a.delay < b.delay) {
+	                    return -1;
+	                } else if (a.delay > b.delay) {
+	                    return 1;
+	                }
+	                return 0;
+	            }
+	            //return b.trigger < a.trigger ? -1 : b.trigger > a.trigger ? 1 : 0;
+	            if (b.trigger < a.trigger) {
+	                return -1;
+	            }
+	            if (b.trigger > a.trigger) {
+	                return 1;
+	            }
+	        });
+	        this.setState({ commands: commands });
+	        //Start sending requests to server
 	        var cid = this.props.cid;
-	        this.setThrottlable("http://campaign.vm5apis.com" + "/v3/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
+	        this.setThrottlable("http://campaign.vm5apis.com" + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
 	        if (passByReference.noError) {
 	            this.resetForm();
 	        }
+	        this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
 	    },
 	    handleReset: function handleReset(e) {
 	        e.preventDefault();
 	        console.log("reset!");
 	        this.resetForm();
 	        this.setState({ commands: [] });
-	        console.log(this.state);
+	        var commands = [{
+	            "trigger": "on-connect",
+	            "type": "unthrottle"
+	        }];
+	        var cid = this.props.cid;
+	        this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
 	    },
 	    /*handleDelete: function(index) {
 	        var items = this.props.state.webItems;
@@ -603,30 +741,37 @@
 	                color: "#ffffff"
 	            }
 	        };
-	        if (this.state.phase == "intro") {
-	            return _react2.default.createElement(
-	                'div',
-	                { style: style.div },
-	                _react2.default.createElement(_RaisedButton2.default, { label: 'Intro', onClick: this.onChangePhase.bind(this, 'intro'), style: style.phaseButton, backgroundColor: '#eeab58', labelStyle: style.buttonTextActive }),
-	                _react2.default.createElement(_RaisedButton2.default, { label: 'During game', onClick: this.onChangePhase.bind(this, 'duringGame'), style: style.phaseButton, labelStyle: style.buttonText })
-	            );
-	        } else {
-	            return _react2.default.createElement(
-	                'div',
-	                { style: style.div },
-	                _react2.default.createElement(_RaisedButton2.default, { label: 'Intro', onClick: this.onChangePhase.bind(this, 'intro'), style: style.phaseButton, labelStyle: style.buttonText }),
-	                _react2.default.createElement(_RaisedButton2.default, { label: 'During game', onClick: this.onChangePhase.bind(this, 'duringGame'), style: style.phaseButton, backgroundColor: '#eeab58', labelStyle: style.buttonTextActive })
-	            );
-	        }
+	        return _react2.default.createElement(
+	            'div',
+	            { style: style.div },
+	            _react2.default.createElement(_RaisedButton2.default, { label: 'Intro', onClick: this.onChangePhase.bind(this, 'intro'), style: style.phaseButton, backgroundColor: this.state.phase == "intro" ? "#eeab58" : "#ffffff", labelStyle: this.state.phase == "intro" ? style.buttonTextActive : style.buttonText }),
+	            _react2.default.createElement(_RaisedButton2.default, { label: 'During game', onClick: this.onChangePhase.bind(this, 'duringGame'), style: style.phaseButton, backgroundColor: this.state.phase == "duringGame" ? "#eeab58" : "#ffffff", labelStyle: this.state.phase == "duringGame" ? style.buttonTextActive : style.buttonText })
+	        );
 	    },
-	    displayDuration: function displayDuration() {
-	        if (this.state.action == "poor" || this.state.action == "set-fps") {
-	            return _react2.default.createElement(_TextField2.default, { hintText: 'Duration (sec)', floatingLabelText: 'Duration', value: this.state.duration, onChange: this.onChangeText.bind(this, "duration") });
-	        }
-	    },
-	    displaySetFps: function displaySetFps() {
-	        if (this.state.action == "set-fps") {
-	            return _react2.default.createElement(_TextField2.default, { hintText: 'Fps', floatingLabelText: 'Fps', value: this.state.fps, onChange: this.onChangeText.bind(this, "fps") });
+	    displayTextFields: function displayTextFields() {
+	        if (this.state.phase == "duringGame") {
+	            if (this.state.action == "poor") {
+	                return _react2.default.createElement(
+	                    'div',
+	                    null,
+	                    _react2.default.createElement(_TextField2.default, { hintText: 'Start Time (sec)', floatingLabelText: 'Start Time', value: this.state.startTime, onChange: this.onChangeText.bind(this, "startTime") }),
+	                    _react2.default.createElement(_TextField2.default, { hintText: 'Duration (sec)', floatingLabelText: 'Duration', value: this.state.duration, onChange: this.onChangeText.bind(this, "duration") })
+	                );
+	            } else if (this.state.action == "set-fps") {
+	                return _react2.default.createElement(
+	                    'div',
+	                    null,
+	                    _react2.default.createElement(_TextField2.default, { hintText: 'Start Time (sec)', floatingLabelText: 'Start Time', value: this.state.startTime, onChange: this.onChangeText.bind(this, "startTime") }),
+	                    _react2.default.createElement(_TextField2.default, { hintText: 'Duration (sec)', floatingLabelText: 'Duration', value: this.state.duration, onChange: this.onChangeText.bind(this, "duration") }),
+	                    _react2.default.createElement(_TextField2.default, { hintText: 'Fps', floatingLabelText: 'Fps', value: this.state.fps, onChange: this.onChangeText.bind(this, "fps") })
+	                );
+	            } else {
+	                return _react2.default.createElement(
+	                    'div',
+	                    null,
+	                    _react2.default.createElement(_TextField2.default, { hintText: 'Start Time (sec)', floatingLabelText: 'Start Time', value: this.state.startTime, onChange: this.onChangeText.bind(this, "startTime") })
+	                );
+	            }
 	        }
 	    },
 	    render: function render() {
@@ -645,7 +790,7 @@
 	            section: {
 	                marginTop: '12px',
 	                padding: '16px',
-	                height: '531px'
+	                height: '507px'
 	            },
 	            title: {
 	                fontFamily: 'Roboto, sans-serif',
@@ -714,14 +859,10 @@
 	                    _RadioButton.RadioButtonGroup,
 	                    { name: 'webSettings', valueSelected: this.state.action, onChange: this.onChangeSelect },
 	                    _react2.default.createElement(_RadioButton.RadioButton, { value: 'poor', label: 'Poor connection', style: style.radioButton }),
-	                    _react2.default.createElement(_RadioButton.RadioButton, { value: 'set-fps', label: 'Set fps...', style: style.radioButton }),
-	                    _react2.default.createElement(_RadioButton.RadioButton, { value: 'terminate-video', label: 'Terminate video socket', style: style.radioButton }),
-	                    _react2.default.createElement(_RadioButton.RadioButton, { value: 'terminate-audio', label: 'Terminate audio socket', style: style.radioButton }),
-	                    _react2.default.createElement(_RadioButton.RadioButton, { value: 'terminate-ctrl', label: 'Terminate control socket', style: style.radioButton })
+	                    _react2.default.createElement(_RadioButton.RadioButton, { value: 'set-fps', label: 'Set fps...', disabled: this.state.phase == "intro" ? true : false, style: style.radioButton }),
+	                    _react2.default.createElement(_RadioButton.RadioButton, { value: 'terminate-ws', label: 'Terminate web socket', style: style.radioButton })
 	                ),
-	                _react2.default.createElement(_TextField2.default, { hintText: 'Start Time (sec)', floatingLabelText: 'Start Time', value: this.state.startTime, onChange: this.onChangeText.bind(this, "startTime") }),
-	                this.displayDuration(),
-	                this.displaySetFps()
+	                this.displayTextFields()
 	            ),
 	            _react2.default.createElement(
 	                _index.Row,
@@ -798,10 +939,7 @@
 	                    'Campaign'
 	                ),
 	                _react2.default.createElement(_Divider2.default, { style: style.shortLine }),
-	                _react2.default.createElement(CheckboxInput, { order: '1', label: 'Campaign Expired', id: 'campaignExpired', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
-	                _react2.default.createElement(_Divider2.default, { style: style.longLine }),
-	                _react2.default.createElement(CheckboxInput, { order: '2', label: 'Campaign List Expired', id: 'campaignListExpired', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
-	                _react2.default.createElement(_Divider2.default, { style: style.longLine })
+	                _react2.default.createElement(RadioButtons, { order: '1', label: 'Campaign Expired', id: 'campaignExpired', state: this.props.state, options: this.props.campaignExpiredOptions, updateState: this.props.updateState, addVideoCorrupt: this.addVideoCorrupt, deleteVideoCorrupt: this.deleteVideoCorrupt })
 	            )
 	        );
 	    }
@@ -833,8 +971,8 @@
 	                height: '553px'
 	            },
 	            section: {
-	                marginTop: '12',
-	                padding: '16'
+	                marginTop: '12px',
+	                padding: '16px'
 	            },
 	            title: {
 	                fontFamily: 'Roboto, sans-serif',
@@ -859,9 +997,7 @@
 	                        _react2.default.createElement(_Divider2.default, { style: style.shortLine }),
 	                        _react2.default.createElement(RadioButtons, { order: '1', label: 'No VM', id: 'noVm', state: this.props.state, options: this.props.noVmOptions, updateState: this.props.updateState, addVideoCorrupt: this.addVideoCorrupt, deleteVideoCorrupt: this.deleteVideoCorrupt }),
 	                        _react2.default.createElement(_Divider2.default, { style: style.longLine }),
-	                        _react2.default.createElement(CheckboxInput, { order: '2', label: 'VM Expired', id: 'vmExpired', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
-	                        _react2.default.createElement(_Divider2.default, { style: style.longLine }),
-	                        _react2.default.createElement(CheckboxInput, { order: '3', label: 'VM Not Yours', id: 'vmNotYours', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
+	                        _react2.default.createElement(CheckboxInput, { order: '2', label: 'VM Not Yours', id: 'vmNotYours', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
 	                        _react2.default.createElement(_Divider2.default, { style: style.longLine })
 	                    ),
 	                    _react2.default.createElement(
@@ -896,9 +1032,7 @@
 	                        _react2.default.createElement(_Divider2.default, { style: style.shortLine }),
 	                        _react2.default.createElement(RadioButtons, { order: '1', label: 'No VM', id: 'noVm', state: this.props.state, options: this.props.noVmOptions, updateState: this.props.updateState }),
 	                        _react2.default.createElement(_Divider2.default, { style: style.longLine }),
-	                        _react2.default.createElement(CheckboxInput, { order: '2', label: 'VM Expired', id: 'vmExpired', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
-	                        _react2.default.createElement(_Divider2.default, { style: style.longLine }),
-	                        _react2.default.createElement(CheckboxInput, { order: '3', label: 'VM Not Yours', id: 'vmNotYours', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
+	                        _react2.default.createElement(CheckboxInput, { order: '2', label: 'VM Not Yours', id: 'vmNotYours', state: this.props.state, onChangeChecked: this.props.onChangeChecked }),
 	                        _react2.default.createElement(_Divider2.default, { style: style.longLine })
 	                    ),
 	                    _react2.default.createElement(
@@ -953,10 +1087,8 @@
 	            language: '',
 	            timeLimit: '',
 	            httpResponse: '',
-	            campaignExpired: false,
-	            campaignListExpired: false,
 	            noVm: 'Not set',
-	            vmExpired: false,
+	            campaignExpired: 'Not set',
 	            vmNotYours: false,
 	            imgCorrupts: 'Not set',
 	            imgTrial: false,
@@ -971,10 +1103,8 @@
 	            language: '',
 	            timeLimit: '',
 	            httpResponse: '',
-	            campaignExpired: false,
-	            campaignListExpired: false,
 	            noVm: 'Not set',
-	            vmExpired: false,
+	            campaignExpired: 'Not set',
 	            vmNotYours: false,
 	            imgCorrupts: 'Not set',
 	            imgTrial: false,
@@ -983,10 +1113,10 @@
 	            mapping: []
 	        });
 	    },
-	    displayForm: function displayForm(noVmOptions, corruptedImageOptions) {
+	    displayForm: function displayForm(campaignExpiredOptions, noVmOptions, corruptedImageOptions) {
 	        switch (this.state.page) {
 	            case 1:
-	                return _react2.default.createElement(SettingPageOne, { state: this.state, updateState: this.updateState, onChangeChecked: this.onChangeChecked });
+	                return _react2.default.createElement(SettingPageOne, { state: this.state, updateState: this.updateState, onChangeChecked: this.onChangeChecked, campaignExpiredOptions: campaignExpiredOptions });
 	            case 2:
 	                return _react2.default.createElement(SettingPageTwo, { state: this.state, updateState: this.updateState, onChangeChecked: this.onChangeChecked, noVmOptions: noVmOptions, corruptedImageOptions: corruptedImageOptions });
 	            case 3:
@@ -1050,7 +1180,6 @@
 	        var cid = this.props.cid;
 	        var mapping = this.props.mapping;
 	        _.forEach(stateObj, function (value, key) {
-	            //console.log("key: " + key);
 	            if (key in mapping && value && value != "Not set") {
 	                //only look at attributes that are set
 	                var url = '';
@@ -1059,7 +1188,6 @@
 	                if (subObj.type == "select" && typeof url[value] != 'undefined') {
 	                    url = url[value];
 	                }
-	                //var url = subObj.url;
 	                url = url.replace(/:cid/, cid);
 	                if (subObj.type == "textInput") {
 	                    url = url.replace(/:lang/, value);
@@ -1077,7 +1205,7 @@
 	    },
 	    handleReset: function handleReset(e) {
 	        this.resetState(this.state.page);
-	        var url = "http://campaign.vm5apis.com" + "/v3/reset/" + this.props.cid; //change to real url: delete the first string
+	        var url = "http://campaign.vm5apis.com" + "/v4/reset/" + this.props.cid; //change to real url: delete the first string
 	        this.sendRequest(url);
 	    },
 	    /*onSubmitSetRoot: function(cid) {
@@ -1117,89 +1245,34 @@
 
 	        var style = {
 	            buttonActive: {
-	                backgroundColor: '#c8caea'
+	                backgroundColor: '#00bcd4'
 	            }
 	        };
-	        switch (this.state.page) {
-	            case 1:
-	                return _react2.default.createElement(
-	                    'div',
-	                    null,
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '1', onClick: function onClick() {
-	                                return _this.handleClick(1);
-	                            }, style: style.buttonActive },
-	                        '1'
-	                    ),
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '2', onClick: function onClick() {
-	                                return _this.handleClick(2);
-	                            } },
-	                        '2'
-	                    ),
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '3', onClick: function onClick() {
-	                                return _this.handleClick(3);
-	                            } },
-	                        '3'
-	                    )
-	                );
-	            case 2:
-	                return _react2.default.createElement(
-	                    'div',
-	                    null,
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '1', onClick: function onClick() {
-	                                return _this.handleClick(1);
-	                            } },
-	                        '1'
-	                    ),
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '2', onClick: function onClick() {
-	                                return _this.handleClick(2);
-	                            }, style: style.buttonActive },
-	                        '2'
-	                    ),
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '3', onClick: function onClick() {
-	                                return _this.handleClick(3);
-	                            } },
-	                        '3'
-	                    )
-	                );
-	            case 3:
-	                return _react2.default.createElement(
-	                    'div',
-	                    null,
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '1', onClick: function onClick() {
-	                                return _this.handleClick(1);
-	                            } },
-	                        '1'
-	                    ),
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '2', onClick: function onClick() {
-	                                return _this.handleClick(2);
-	                            } },
-	                        '2'
-	                    ),
-	                    _react2.default.createElement(
-	                        _FlatButton2.default,
-	                        { type: 'button', id: '3', onClick: function onClick() {
-	                                return _this.handleClick(3);
-	                            }, style: style.buttonActive },
-	                        '3'
-	                    )
-	                );
-	        }
+	        return _react2.default.createElement(
+	            'div',
+	            null,
+	            _react2.default.createElement(
+	                _FlatButton2.default,
+	                { type: 'button', id: '1', onClick: function onClick() {
+	                        return _this.handleClick(1);
+	                    }, style: this.state.page == 1 ? style.buttonActive : null },
+	                '1'
+	            ),
+	            _react2.default.createElement(
+	                _FlatButton2.default,
+	                { type: 'button', id: '2', onClick: function onClick() {
+	                        return _this.handleClick(2);
+	                    }, style: this.state.page == 2 ? style.buttonActive : null },
+	                '2'
+	            ),
+	            _react2.default.createElement(
+	                _FlatButton2.default,
+	                { type: 'button', id: '3', onClick: function onClick() {
+	                        return _this.handleClick(3);
+	                    }, style: this.state.page == 3 ? style.buttonActive : null },
+	                '3'
+	            )
+	        );
 	    },
 	    displayResetSubmitButtons: function displayResetSubmitButtons() {
 	        var style = {
@@ -1230,10 +1303,10 @@
 	        }
 	    },
 	    render: function render() {
+	        var campaignExpiredOptions = ['Not set', 'Campaign phase', 'Trial phase'];
 	        var noVmOptions = ['Not set', 'Campaign phase', 'Trial phase', 'Web connection phase'];
 	        var corruptedImageOptions = ['Not set', 'Campaign phase', 'Trial phase'];
 	        var webSettings = [];
-	        //console.log(this.state.page);
 	        var currentPage = this.state.page;
 	        var buttons = [];
 	        var style = {
@@ -1244,7 +1317,7 @@
 	        return _react2.default.createElement(
 	            'form',
 	            { onSubmit: this.handleSubmit, style: style.form },
-	            this.displayForm(noVmOptions, corruptedImageOptions),
+	            this.displayForm(campaignExpiredOptions, noVmOptions, corruptedImageOptions),
 	            _react2.default.createElement(
 	                _index.Row,
 	                { center: 'xs' },
@@ -1410,7 +1483,7 @@
 	                            _react2.default.createElement(
 	                                _index.Col,
 	                                { xs: 6, style: { padding: '20px' } },
-	                                _react2.default.createElement(EventPanel, { cid: this.state.activeCid, url: this.props.url })
+	                                _react2.default.createElement(EventPanel, { cid: this.state.activeCid, url: this.props.url, pullInterval: 500 })
 	                            )
 	                        )
 	                    )
@@ -1420,7 +1493,7 @@
 	    }
 	});
 
-	(0, _reactDom.render)(_react2.default.createElement(ContentBox, { url: 'http://campaign.vm5apis.com/v3/debug/M' }), document.getElementById('content') //change to real url
+	(0, _reactDom.render)(_react2.default.createElement(ContentBox, { url: 'http://campaign.vm5apis.com/v4/debug/M' }), document.getElementById('content') //change to real url
 	);
 
 /***/ },
@@ -54574,6 +54647,14 @@
 			"display": "HTTP Response Code",
 			"textinput": true
 		},
+		"expiredCids": {
+			"display": "Campaign Expired (Trial)",
+			"textinput": false
+		},
+		"campaignsExpiredCids": {
+			"display": "Campaign Expired (Campaign)",
+			"textinput": false
+		},
 		"campaignsNovmCids": {
 			"display": "No VM (Campaign)",
 			"textinput": false
@@ -54584,10 +54665,6 @@
 		},
 		"wsNovmCids": {
 			"display": "No VM (Web Socket)",
-			"textinput": false
-		},
-		"expiredCids": {
-			"display": "VM Expired (Trial)",
 			"textinput": false
 		},
 		"notYoursCids": {
@@ -54619,37 +54696,43 @@
 	module.exports = {
 		"language": {
 			"type": "textInput",
-			"url": "/v3/campaigns/set-next-lang-to-:lang/:cid"
+			"url": "/v4/campaigns/set-next-lang-to-:lang/:cid"
 		},
 		"timeLimit": {
 			"type": "textInput",
-			"url": "/v3/trial/set-next-timelimit-:n-secs/:cid"
+			"url": "/v4/trial/set-next-timelimit-:n-secs/:cid"
 		},
 		"httpResponse": {
 			"type": "textInput",
-			"url": "/v3/trial/set-next-status-code-:code/:cid"
+			"url": {
+				"Campaign phase": "/v4/campaigns/set-next-status-code-:code/:cid",
+				"Trial phase": "/v4/trial/set-next-status-code-:code/:cid"
+			}
 		},
 		"noVm": {
 			"type": "select",
 			"url": {
-				"Campaign phase": "/v3/campaigns/set-next-novm/:cid",
-				"Trial phase": "/v3/trial/set-next-novm/:cid",
-				"Web connection phase": "/v3/trial/set-next-novm-on-connect-ws/:cid"
+				"Campaign phase": "/v4/campaigns/set-next-novm/:cid",
+				"Trial phase": "/v4/trial/set-next-novm/:cid",
+				"Web connection phase": "/v4/trial/set-next-novm-on-connect-ws/:cid"
 			}
 		},
-		"vmExpired": {
-			"type": "checkbox",
-			"url": "/v3/trial/set-next-expired/:cid"
+		"campaignExpired": {
+			"type": "select",
+			"url": {
+				"Campaign phase": "/v4/campaigns/set-next-expired/:cid",
+				"Trial phase": "/v4/trial/set-next-expired/:cid"
+			}
 		},
 		"vmNotYours": {
 			"type": "checkbox",
-			"url": "/v3/trial/set-next-not-yours/:cid"
+			"url": "/v4/trial/set-next-not-yours/:cid"
 		},
 		"imgCorrupts": {
 			"type": "select",
 			"url": {
-				"Campaign phase": "/v3/campaigns/set-next-image-link-corrupt/:cid",
-				"Trial phase": "/v3/trial/set-next-image-link-corrupt/:cid"
+				"Campaign phase": "/v4/campaigns/set-next-image-link-corrupt/:cid",
+				"Trial phase": "/v4/trial/set-next-image-link-corrupt/:cid"
 			}
 		},
 		"videoCorrupts": {
@@ -54659,22 +54742,6 @@
 		"preRecordedVideo": {
 			"type": "checkbox",
 			"url": "/v3/trial/set-next-pre-recorded/:cid"
-		},
-		"introPoor": {
-			"type": "checkbox",
-			"url": "/v3/trial/set-next-throttled-to-3-fps/:cid"
-		},
-		"webItems": {
-			"timeZero": {
-				"Poor connection": "/v3/trial/set-next-throttled-to-:initfps-fps/:cid"
-			},
-			"others": {
-				"No speed limit": "/v3/trial/stop-throttle-ws/:cid",
-				"Poor connection": "/v3/trial/start-throttle-ws-to-:fps-fps/:cid",
-				"Terminate video socket": "/v3/trial/terminate-video-ws/:cid",
-				"Terminate audio socket": "/v3/trial/terminate-audio-ws/:cid",
-				"Terminate control socket": "/v3/trial/terminate-ctrl-ws/:cid"
-			}
 		}
 	};
 
