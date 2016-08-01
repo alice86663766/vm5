@@ -8,6 +8,7 @@ import $ from 'jquery';
 import {GridList, GridTile} from 'material-ui/GridList';
 import Paper from 'material-ui/Paper';
 import Menu from 'material-ui/Menu';
+import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import Divider from 'material-ui/Divider';
 import ArrowDropRight from 'material-ui/svg-icons/navigation-arrow-drop-right';
@@ -39,6 +40,23 @@ Poor connection: 10 fps.
 Intro poor connection: 3fps. Set initial fps to 3fps.
 */
 var Chart = React.createClass({
+    postWebRequests: function (url, cid, commands) {
+        var data = {
+            "cid": cid,
+            "commands": commands
+        }
+        $.ajax({
+            url : url,
+            type: "POST",
+            data: data,
+            success: function(data){
+                console.log("ajax post return data:", data);
+            }.bind(this),
+            error: function(xhr, status, err) {
+                alert("Error!!");
+            }.bind(this)
+        });
+    },
     componentDidMount: function () {
         console.log("In componenet did mount!");
         var options = {
@@ -88,46 +106,21 @@ var Chart = React.createClass({
         this.chart.destroy();
     },
     componentWillReceiveProps: function(props) {
-        this.chart.xAxis[0].setExtremes(-3, this.props.time);
-        this.chart.series[0].setData(props.lineData);
-        this.chart.series[1].setData(props.flagData);
+        this.chart.xAxis[0].setExtremes(-3, props.time);
+        if ((props.lineData.length > 0 && props.lineData[props.lineData.length-1].x > props.time) || (props.flagData.length > 0 && props.flagData[props.flagData.length-1].x >= props.time)) {
+            alert("Time of web setting exceeds game time. Please reset!");
+            var commands = [{
+                "trigger": "on-connect",
+                "type": "unthrottle"
+            }]
+            var cid = this.props.cid;
+            this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
+        }
+        else {
+            this.chart.series[0].setData(props.lineData);
+            this.chart.series[1].setData(props.flagData);
+        }
     },
-    /*componentWillReceiveProps: function(props) {
-        console.log("a prop is sent in");
-        console.log(this.chart);
-        var point = props.newPoint;
-        point[0] = parseFloat(props.newPoint[0]);
-        if (!isNaN(props.newPoint[1])) {
-            console.log("in if");
-            point[1] = parseFloat(props.newPoint[1]);
-            console.log("point before added", point);
-            console.log(this.chart.series[0].data);
-            this.chart.series[0].addPoint(point, true);
-            console.log(this.chart.series[0].data);
-        }
-        else if (props.newPoint[1]) {
-            console.log("in else");
-            var dataObj = {x: 0, text: '', title:''};
-            dataObj.x = point[0];
-            dataObj.text = point[1];
-            dataObj.title = point[1];
-            console.log("dataObj before added to flag data", dataObj);
-            console.log("flag data before added", this.state.flagPoints);
-            var temp = this.state.flagPoints;
-            temp = temp.concat(dataObj);
-            console.log("set state:", temp);
-            this.chart.series[1].setData(temp);
-            this.setState({flagPoints: temp});
-            if (point[1] == "No speed limit") {
-                point[1] = 100;
-                this.chart.series[0].addPoint(point);
-            }
-            else if (point[1] == "Poor connection") {
-                point[1] = 10;
-                this.chart.series[0].addPoint(point);
-            }
-        }
-    },*/
     render: function() {
         //console.log("chart data:", this.props.data);
         return (
@@ -139,11 +132,15 @@ var Chart = React.createClass({
 var SettingsBlock = React.createClass({
     //Return API status
     render: function() {
-        var debugStatus = this.props.data;
+        var debugStatus = this.props.data.v4;
+        if (this.props.data.v3) {
+            debugStatus.onetimeTokenStatusCodeCids = this.props.data.v3.onetimeTokenStatusCodeCids;
+            debugStatus.corruptedVideoCids = this.props.data.v3.corruptedVideoCids;
+            debugStatus.preRecordedCids = this.props.data.v3.preRecordedCids;
+        }
         var mapping = this.props.mapping;
         var cid = this.props.cid;
         var settings = [];
-        //console.log(mapping);
         var style = {
             longLine: {
                 display: 'block',
@@ -167,10 +164,7 @@ var SettingsBlock = React.createClass({
             }
         }
         _.forEach(debugStatus, function(value, key) {
-            if (cid in value && key == "throttledCids" && value[cid]["initFps"]!=100) {
-                settings.push(<li>Intro bad connection</li>);
-            }
-            else if (cid in value && mapping[key]) {
+            if (cid in value && mapping[key]) {
                 var setting = mapping[key]["display"];
                 if (mapping[key]["textinput"]) {
                     setting = setting.concat(": " + debugStatus[key][cid]);
@@ -199,9 +193,9 @@ var EventPanel = React.createClass({
             success: function(data){
                 this.setState({data: data});
                 var debugTimeLimit = '';
-                if (data.timelimitCids[this.props.cid]) {
+                if (data.v4.timelimitCids[this.props.cid]) {
                     //console.log("Load api time");
-                    debugTimeLimit = data.timelimitCids[this.props.cid];
+                    debugTimeLimit = data.v4.timelimitCids[this.props.cid];
                     debugTimeLimit = parseFloat(debugTimeLimit);
                     //console.log(debugTimeLimit);
                     this.setState({time: debugTimeLimit});
@@ -230,6 +224,7 @@ var EventPanel = React.createClass({
     },
     componentDidMount: function() {
         this.loadApiMapping();
+        this.loadApiStatus();
         setInterval(this.loadApiStatus, this.props.pullInterval);
     },
     getInitialState:function() {
@@ -239,9 +234,10 @@ var EventPanel = React.createClass({
         var objs = [];
         var lineData = [];
         var flagData = [];
+        var lastFps = 100;
         //{x: 0, text:'No speed limit', title:'No speed limit'}
-        if (this.state.data.preScheduleCids && this.state.data.preScheduleCids[this.props.cid]) {
-            objs = this.state.data.preScheduleCids[this.props.cid];
+        if (this.state.data.v4 && this.state.data.v4.preScheduleCids && this.state.data.v4.preScheduleCids[this.props.cid]) {
+            objs = this.state.data.v4.preScheduleCids[this.props.cid];
             var filtered = [];
             filtered = _.filter(objs, function(obj) {
                 if (obj.type == "set-fps" || obj.type == "unthrottle") {
@@ -251,6 +247,9 @@ var EventPanel = React.createClass({
                     return false;
                 }
             });
+            if (filtered.length == 0 || filtered[0].trigger != "on-connect") {
+                lineData.push({x: -3, y: 100});
+            }
             _.forEach(filtered, function(value, key) {
                 var obj = {x: 0, y: 0};
                 var x = -3;
@@ -263,11 +262,22 @@ var EventPanel = React.createClass({
                 }
                 obj.x = x;
                 obj.y = y;
+                lastFps = y;
                 lineData.push(obj);
             });
+            lineData.push({x: this.state.time, y: lastFps});
             filtered = _.filter(objs, function(obj) {
                 if (obj.type == "terminate-ws") {
                     return true;
+                }
+                else if (obj.type == "set-fps") {
+                    if (obj.trigger == "on-connect" && obj.params && obj.params.fps == "2") {
+                        return true;
+                    }
+                    else if (obj.trigger == "after-connect" && obj.params && obj.params.fps == "10") {
+                        return true;
+                    }
+                    return false;
                 }
                 else {
                     return false;
@@ -277,6 +287,14 @@ var EventPanel = React.createClass({
                 var obj = {x: -3, text: "terminate-ws", title: "terminate-ws"};
                 if (value.delay) {
                     obj.x = (parseInt(value.delay)/1000) - 3;
+                }
+                if (value.trigger == "on-connect" && value.params && value.params.fps == "2") {
+                    obj.text = "poor connection";
+                    obj.title = "Intro poor";
+                }
+                else if (value.trigger == "after-connect" && value.params && value.params.fps == "10") {
+                    obj.text = "poor connection";
+                    obj.title = "poor";
                 }
                 flagData.push(obj);
             });
@@ -299,19 +317,48 @@ var EventPanel = React.createClass({
     }
 });
 
+var Dropdown = React.createClass ({
+    handleChange: function(e, index, value) {
+        console.log("id:", this.props.id);
+        console.log("value:", value);
+        this.props.updateState(this.props.id, value);
+        if (this.props.state.httpSelect == "Not set") {
+            this.props.updateState("httpResponse", "");
+        }
+    },
+    render: function() {
+        const style = {
+            label: {
+                display: "inline-block"
+            },
+            dropdownMenu: {
+                display: "inline-block"
+            }
+        }
+        var items = this.props.options.map (function(item, index) {
+            return(
+                <MenuItem value={item} primaryText={item} key={index} />
+            );
+        });
+        var id = this.props.id;
+        return (
+            <div>
+                <label style={style.label}>{this.props.label}:</label>
+                <DropDownMenu value={this.props.state[id]} onChange={this.handleChange}>
+                    {items}
+                </DropDownMenu>
+            </div>
+        );
+    }
+});
+
 var RadioButtons = React.createClass ({
     handleChange: function(e, value) {
         console.log("id:", this.props.id);
         console.log("value:", value);
         this.props.updateState(this.props.id, value);
-        if (this.props.id == "imgCorrupts" && value == "Trial phase") {
-            this.props.addVideoCorrupt();
-            console.log("true");
-        }
-        else if (this.props.id == "imgCorrupts" && (value == "Campaign phase" || value == "Not set")) {
-            this.props.deleteVideoCorrupt();
+        if (this.props.state.imgCorrupts == "Campaign phase") {
             this.props.updateState("videoCorrupts", false);
-            console.log("false");
         }
     },
     render: function() {
@@ -451,25 +498,20 @@ var WebSocketBlock = React.createClass ({
     deleteRepeatCommand: function(commands, obj) {
         var conflict = false;
         //if (commands.length > 0) {
-            commands = _.reject(commands, function(command) {
-                if (command.trigger == "after-connect") {
-                    /*if (command.trigger == obj.trigger && command.type == "set-fps" && obj.type == "unthrottle" && command.delay == obj.delay) {
-                        conflict = true;
-                    }*/
-                    if (obj.type == "set-fps") {
-                        return ((command.trigger == obj.trigger) && (command.type == "unthrottle" || command.type == "set-fps") && (command.delay == obj.delay))
-                    }
-                    else if ((command.trigger == obj.trigger) && (command.type == "set-fps") && (obj.type == "unthrottle") && (command.delay == obj.delay)) {
-                        conflict = true;
-                    }
-                    return ((command.trigger == obj.trigger) && (command.type == obj.type) && (command.delay == obj.delay));
+        commands = _.reject(commands, function(command) {
+            if (command.trigger == "after-connect") {
+                if (obj.type == "set-fps") {
+                    return ((command.trigger == obj.trigger) && (command.type == "unthrottle" || command.type == "set-fps") && (command.delay == obj.delay))
                 }
-                else {
-                    return ((command.trigger == obj.trigger) && (command.type == obj.type));
+                else if ((command.trigger == obj.trigger) && (command.type == "set-fps") && (obj.type == "unthrottle") && (command.delay == obj.delay)) {
+                    conflict = true;
                 }
-            });
-        //}
-        //commands.push(obj);
+                return ((command.trigger == obj.trigger) && (command.type == obj.type) && (command.delay == obj.delay));
+            }
+            else {
+                return ((command.trigger == obj.trigger) && (command.type == obj.type));
+            }
+        });
         if (!conflict) {
             commands.push(obj);
             console.log("pushed!", obj, commands);
@@ -492,80 +534,80 @@ var WebSocketBlock = React.createClass ({
                 }
             }
         }
-        var commands = this.state.commands;
-        var commandObj = {
-            "trigger": "after-connect",
-            "type": this.state.action,
-            "delay": 0
-        };
-        var unthrottleObj = {
-            "trigger": "after-connect",
-            "type": "unthrottle",
-            "delay": 0
-        }
-        var params = {"fps": 0};
-        if (this.state.phase == "intro") {
-            if (this.state.action == "poor") {
-                commandObj = {
-                    "trigger": "on-connect",
-                    "type": "set-fps",
-                    "params": {
-                        "fps": 2
+        if (passByReference.noError) {
+            var commands = this.state.commands;
+            var commandObj = {
+                "trigger": "after-connect",
+                "type": this.state.action,
+                "delay": 0
+            };
+            var unthrottleObj = {
+                "trigger": "after-connect",
+                "type": "unthrottle",
+                "delay": 0
+            }
+            var params = {"fps": 0};
+            if (this.state.phase == "intro") {
+                if (this.state.action == "poor") {
+                    commandObj = {
+                        "trigger": "on-connect",
+                        "type": "set-fps",
+                        "params": {
+                            "fps": 2
+                        }
                     }
+                    unthrottleObj.delay = 3000;
+                    commands = this.deleteRepeatCommand(commands, commandObj);
+                    commands = this.deleteRepeatCommand(commands, unthrottleObj);
                 }
-                unthrottleObj.delay = 3000;
+                else {
+                    commandObj.delay = 1000;
+                    commands = this.deleteRepeatCommand(commands, commandObj);
+                }
+            }
+            else if (this.state.phase == "duringGame") {
+                if (this.state.action == "poor") {
+                    commandObj.type = "set-fps";
+                    params.fps = 10;
+                    commandObj["params"] = params;
+                    unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration))*1000;
+                }
+                else if (this.state.action == "set-fps") {
+                    params.fps = parseFloat(this.state.fps);
+                    commandObj["params"] = params;
+                    unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration))*1000;
+                }
+                commandObj.delay = (parseFloat(this.state.startTime) + 3)*1000;
                 commands = this.deleteRepeatCommand(commands, commandObj);
-                commands = this.deleteRepeatCommand(commands, unthrottleObj);
+                if (unthrottleObj.delay != 0) {
+                    commands = this.deleteRepeatCommand(commands, unthrottleObj);
+                }
             }
-            else {
-                commandObj.delay = 1000;
-                commands = this.deleteRepeatCommand(commands, commandObj);
-            }
-        }
-        else if (this.state.phase == "duringGame") {
-            if (this.state.action == "poor") {
-                commandObj.type = "set-fps";
-                params.fps = 10;
-                commandObj["params"] = params;
-                unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration))*1000;
-            }
-            else if (this.state.action == "set-fps") {
-                params.fps = parseFloat(this.state.fps);
-                commandObj["params"] = params;
-                unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration))*1000;
-            }
-            commandObj.delay = (parseFloat(this.state.startTime) + 3)*1000;
-            commands = this.deleteRepeatCommand(commands, commandObj);
-            if (unthrottleObj.delay != 0) {
-                commands = this.deleteRepeatCommand(commands, unthrottleObj);
-            }
-        }
-        commands.sort(function(a, b) {
-            if (b.trigger == a.trigger) {
-                if (a.delay < b.delay) {
+            commands.sort(function(a, b) {
+                if (b.trigger == a.trigger) {
+                    if (a.delay < b.delay) {
+                        return -1;
+                    }
+                    else if (a.delay > b.delay) {
+                        return 1;
+                    }
+                    return 0;
+                }
+                //return b.trigger < a.trigger ? -1 : b.trigger > a.trigger ? 1 : 0;
+                if (b.trigger < a.trigger) {
                     return -1;
                 }
-                else if (a.delay > b.delay) {
+                if (b.trigger > a.trigger) {
                     return 1;
                 }
-                return 0;
-            }
-            //return b.trigger < a.trigger ? -1 : b.trigger > a.trigger ? 1 : 0;
-            if (b.trigger < a.trigger) {
-                return -1;
-            }
-            if (b.trigger > a.trigger) {
-                return 1;
-            }
-        });
-        this.setState({commands: commands});
-        //Start sending requests to server
-        var cid = this.props.cid;
-        this.setThrottlable("http://campaign.vm5apis.com" + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
-        if (passByReference.noError) {
+            });
+            this.setState({commands: commands});
+            //Start sending requests to server
+            var cid = this.props.cid;
+            this.setThrottlable("http://campaign.vm5apis.com" + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
             this.resetForm();
+            this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
         }
-        this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
     },
     handleReset: function(e) {
         e.preventDefault();
@@ -740,6 +782,13 @@ var WebSocketBlock = React.createClass ({
 });
 
 var SettingPageOne = React.createClass ({
+    displayHTTPField: function() {
+        if (this.props.state.httpSelect != "Not set") {
+            return (
+                <TextboxInput order="4" label="HTTP Response Code" id="httpResponse" state={this.props.state} updateState={this.props.updateState} />
+            );
+        }
+    },
     render: function() {
         var style = {
             longLine: {
@@ -772,12 +821,13 @@ var SettingPageOne = React.createClass ({
                     <Divider style={style.shortLine} />
                     <TextboxInput order="1" label="Language" id="language" state={this.props.state} updateState={this.props.updateState} />
                     <TextboxInput order="2" label="Time Limit" id="timeLimit" state={this.props.state} updateState={this.props.updateState} />
-                    <TextboxInput order="3" label="HTTP Response Code" id="httpResponse" state={this.props.state} updateState={this.props.updateState} />
+                    <Dropdown order="3" label="HTTP Response" id="httpSelect" state={this.props.state} options={this.props.httpSelectOptions} updateState={this.props.updateState} />
+                    {this.displayHTTPField()}
                 </Paper>
                 <Paper style={style.section}>
                     <h3 style={style.title}>Campaign</h3>
                     <Divider style={style.shortLine} />
-                    <RadioButtons order="1" label="Campaign Expired" id="campaignExpired" state={this.props.state} options={this.props.campaignExpiredOptions} updateState={this.props.updateState} addVideoCorrupt={this.addVideoCorrupt} deleteVideoCorrupt={this.deleteVideoCorrupt} />
+                    <RadioButtons order="1" label="Campaign Expired" id="campaignExpired" state={this.props.state} options={this.props.campaignExpiredOptions} updateState={this.props.updateState} />
                 </Paper>
             </div>            
         );
@@ -785,14 +835,6 @@ var SettingPageOne = React.createClass ({
 });
 
 var SettingPageTwo = React.createClass ({
-    addVideoCorrupt: function() {
-        this.props.updateState("imgTrial", true);
-    },
-    deleteVideoCorrupt: function() {
-        if (this.props.state.imgTrial) {
-            this.props.updateState("imgTrial", false);
-        }
-    },
     displayForm: function() {
         var style = {
             longLine: {
@@ -818,14 +860,14 @@ var SettingPageTwo = React.createClass ({
                 marginTop: '10px'
             }
         }
-        switch (this.props.state.imgTrial) {
+        switch (this.props.state.imgCorrupts == "Campaign phase") {
             case true:
                 return (
                     <div style={style.settingPage} >
                         <Paper style={style.section}>
                             <h3 style={style.title}>VM</h3>
                             <Divider style={style.shortLine} />
-                            <RadioButtons order="1" label="No VM" id="noVm" state={this.props.state} options={this.props.noVmOptions} updateState={this.props.updateState} addVideoCorrupt={this.addVideoCorrupt} deleteVideoCorrupt={this.deleteVideoCorrupt} />
+                            <RadioButtons order="1" label="No VM" id="noVm" state={this.props.state} options={this.props.noVmOptions} updateState={this.props.updateState} />
                             <Divider style={style.longLine} />
                             <CheckboxInput order="2" label="VM Not Yours" id="vmNotYours" state={this.props.state} onChangeChecked={this.props.onChangeChecked} />
                             <Divider style={style.longLine} />
@@ -833,11 +875,9 @@ var SettingPageTwo = React.createClass ({
                         <Paper style={style.section}>
                             <h3 style={style.title}>Video and Images</h3>
                             <Divider style={style.shortLine} />
-                            <RadioButtons order="1" label="Image Corrupts" id="imgCorrupts" state={this.props.state} options={this.props.corruptedImageOptions} updateState={this.props.updateState} addVideoCorrupt={this.addVideoCorrupt} deleteVideoCorrupt={this.deleteVideoCorrupt} />
+                            <RadioButtons order="1" label="Image Corrupts" id="imgCorrupts" state={this.props.state} options={this.props.corruptedImageOptions} updateState={this.props.updateState} />
                             <Divider style={style.longLine} />
-                            <CheckboxInput order="2" label="Video Corrupts" id="videoCorrupts" state={this.props.state} onChangeChecked={this.props.onChangeChecked} />
-                            <Divider style={style.longLine} />
-                            <CheckboxInput order="3" label="Send Pre-recorded Video" id="preRecordedVideo" state={this.props.state} onChangeChecked={this.props.onChangeChecked} />
+                            <CheckboxInput order="2" label="Send Pre-recorded Video" id="preRecordedVideo" state={this.props.state} onChangeChecked={this.props.onChangeChecked} />
                             <Divider style={style.longLine} />
                         </Paper>
                     </div>
@@ -856,9 +896,11 @@ var SettingPageTwo = React.createClass ({
                         <Paper style={style.section}>
                             <h3 style={style.title}>Video and Images</h3>
                             <Divider style={style.shortLine} />
-                            <RadioButtons order="1" label="Image Corrupts" id="imgCorrupts" state={this.props.state} options={this.props.corruptedImageOptions} updateState={this.props.updateState} addVideoCorrupt={this.addVideoCorrupt} deleteVideoCorrupt={this.deleteVideoCorrupt} />
+                            <RadioButtons order="1" label="Image Corrupts" id="imgCorrupts" state={this.props.state} options={this.props.corruptedImageOptions} updateState={this.props.updateState} />
                             <Divider style={style.longLine} />
-                            <CheckboxInput order="2" label="Send Pre-recorded Video" id="preRecordedVideo" state={this.props.state} onChangeChecked={this.props.onChangeChecked} />
+                            <CheckboxInput order="2" label="Video Corrupts" id="videoCorrupts" state={this.props.state} onChangeChecked={this.props.onChangeChecked} />
+                            <Divider style={style.longLine} />
+                            <CheckboxInput order="3" label="Send Pre-recorded Video" id="preRecordedVideo" state={this.props.state} onChangeChecked={this.props.onChangeChecked} />
                             <Divider style={style.longLine} />
                         </Paper>
                     </div>
@@ -890,15 +932,15 @@ var SettingPageThree = React.createClass ({
 var SettingForm = React.createClass ({
     getInitialState: function() {
         return {
-            page: 3, 
+            page: 1, 
             language: '', 
             timeLimit:'' , 
-            httpResponse:'', 
+            httpResponse:'',
+            httpSelect:'Not set', 
             noVm:'Not set', 
             campaignExpired: 'Not set', 
             vmNotYours: false, 
-            imgCorrupts:'Not set',
-            imgTrial: false, 
+            imgCorrupts:'Not set', 
             videoCorrupts: false, 
             preRecordedVideo: false,
             mapping: []
@@ -909,22 +951,22 @@ var SettingForm = React.createClass ({
             page: currentPage, 
             language: '', 
             timeLimit:'' , 
-            httpResponse:'',  
+            httpResponse:'',
+            httpSelect:'Not set',  
             noVm:'Not set', 
             campaignExpired: 'Not set', 
             vmNotYours: false, 
-            imgCorrupts:'Not set',
-            imgTrial: false, 
+            imgCorrupts:'Not set', 
             videoCorrupts: false, 
             preRecordedVideo: false,  
             mapping: []
         });
     },
-    displayForm: function(campaignExpiredOptions, noVmOptions, corruptedImageOptions) {
+    displayForm: function(httpSelectOptions, campaignExpiredOptions, noVmOptions, corruptedImageOptions) {
         switch (this.state.page) {
             case 1:
                 return (
-                    <SettingPageOne state={this.state} updateState={this.updateState} onChangeChecked={this.onChangeChecked} campaignExpiredOptions={campaignExpiredOptions} />
+                    <SettingPageOne state={this.state} updateState={this.updateState} onChangeChecked={this.onChangeChecked} httpSelectOptions={httpSelectOptions} campaignExpiredOptions={campaignExpiredOptions} />
                 );
             case 2:
                 return (
@@ -1002,12 +1044,19 @@ var SettingForm = React.createClass ({
                 if ((subObj.type == "select") && (typeof url[value] != 'undefined')) {
                     url = url[value];
                 }
+                if (key == "httpResponse" && this.state.httpSelect != 'Not set') {
+                    console.log("http Select:", this.state.httpSelect);
+                    var selection = this.state.httpSelect;
+                    url = url[selection];
+                    console.log("url:", url);
+                }
                 url = url.replace(/:cid/, cid);
                 if (subObj.type == "textInput") {
                     url = url.replace(/:lang/, value);
                     url = url.replace(/:n/, value);
                     url = url.replace(/:code/, value);
                 }
+                console.log("url:", url);
                 url = "http://campaign.vm5apis.com" + url; //change to real url: delete this line
                 this.sendRequest(url);
             }
@@ -1020,7 +1069,7 @@ var SettingForm = React.createClass ({
     },
     handleReset: function(e) {
         this.resetState(this.state.page);
-        var url = "http://campaign.vm5apis.com" + "/v4/reset/" + this.props.cid; //change to real url: delete the first string
+        var url = "http://campaign.vm5apis.com" + "/aux/reset/" + this.props.cid; //change to real url: delete the first string
         this.sendRequest(url);
     },
     /*onSubmitSetRoot: function(cid) {
@@ -1090,6 +1139,7 @@ var SettingForm = React.createClass ({
         }
     },
     render: function() {
+        var httpSelectOptions = ['Not set', 'Campaign phase', 'Trial phase', 'Onetime token'];
         var campaignExpiredOptions = ['Not set', 'Campaign phase', 'Trial phase'];
         var noVmOptions = ['Not set', 'Campaign phase', 'Trial phase', 'Web connection phase'];
         var corruptedImageOptions = ['Not set', 'Campaign phase', 'Trial phase'];
@@ -1103,7 +1153,7 @@ var SettingForm = React.createClass ({
         };
         return (
             <form onSubmit={this.handleSubmit} style={style.form} >
-                {this.displayForm(campaignExpiredOptions, noVmOptions, corruptedImageOptions)}
+                {this.displayForm(httpSelectOptions, campaignExpiredOptions, noVmOptions, corruptedImageOptions)}
                 <Row center="xs">
                     <Col xs={9}>
                         {this.displayResetSubmitButtons()}
@@ -1169,6 +1219,19 @@ var CidPanel = React.createClass ({
 });
 
 var ContentBox = React.createClass({
+    loadUrlMapping: function() {
+        $.ajax({
+            url: '/urlMapping.json',
+            dataType: 'json',
+            cache: false,
+            success: function(data){
+                this.setState({urlMapping: data});
+            }.bind(this),
+            error: function(xhr, status, err) {
+                console.log(this.props.url, status, err.toString());
+            }.bind(this)
+        });
+    },
     getInitialState: function() {
         return {
             cids:[{
@@ -1190,39 +1253,6 @@ var ContentBox = React.createClass({
             activeCid: '5054bfde-6108-4ff7-9dc9-193511f407ea',
             urlMapping: []
         };
-    },
-    /*setRootTime: function() {
-        console.log("Set root time");
-        $.ajax({
-            url: this.props.url,
-            dataType: 'json',
-            cache: false,
-            success: function(data){
-                console.log("success!");
-                var debugTimeLimit = '';
-                if (data.timelimitCids[this.state.activeCid]) {
-                    console.log("In if");
-                    debugTimeLimit = data.timelimitCids[this.state.activeCid];
-                }
-                this.setState({rootTime: debugTimeLimit});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.log(this.props.url, status, err.toString());
-            }.bind(this)
-        });
-    },*/
-    loadUrlMapping: function() {
-        $.ajax({
-            url: '/urlMapping.json',
-            dataType: 'json',
-            cache: false,
-            success: function(data){
-                this.setState({urlMapping: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.log(this.props.url, status, err.toString());
-            }.bind(this)
-        });
     },
     componentDidMount: function() {
         this.loadUrlMapping();
@@ -1258,5 +1288,5 @@ var ContentBox = React.createClass({
 });
 
 render(
-  <ContentBox url="http://campaign.vm5apis.com/v4/debug/M" />, document.getElementById('content') //change to real url
+  <ContentBox url="http://campaign.vm5apis.com/aux/debug/M" />, document.getElementById('content') //change to real url
 );

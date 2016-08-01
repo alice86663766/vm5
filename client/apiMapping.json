@@ -9,8 +9,18 @@
 		"textinput": true
 	},
 
+	"campaignsStatusCodeCids": {
+		"display": "HTTP Response Code (Campaign)",
+		"textinput": true
+	},
+
 	"statusCodeCids": {
-		"display": "HTTP Response Code",
+		"display": "HTTP Response Code (Trial)",
+		"textinput": true
+	},
+
+	"onetimeTokenStatusCodeCids": {
+		"display": "HTTP Response Code (Onetime Token)",
 		"textinput": true
 	},
 
