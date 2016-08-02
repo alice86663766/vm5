@@ -1171,7 +1171,7 @@ var CidPanel = React.createClass ({
         this.props.updateRootState("activeCid", value);
     },
     render: function() {
-        const styleOptions = {
+        const style = {
             active: {
                 backgroundColor: '#cccccc',
                 fontSize: '10',
@@ -1197,19 +1197,19 @@ var CidPanel = React.createClass ({
             var displayCid = cid.cid.substring(0, 25) + "...";
             if (this.props.activeCid == cid.cid) {
                 return(
-                    <MenuItem key={cid.id} value={cid.cid} primaryText={displayCid} rightIcon={<ArrowDropRight />} style={styleOptions.active}/>
+                    <MenuItem key={cid.id} value={cid.cid} primaryText={displayCid} rightIcon={<ArrowDropRight />} style={style.active}/>
                 );
             }
             else {
                 return(
-                    <MenuItem key={cid.id} value={cid.cid} primaryText={displayCid} style={styleOptions.normal}/>
+                    <MenuItem key={cid.id} value={cid.cid} primaryText={displayCid} style={style.normal}/>
                 );
             }
         }.bind(this));
         return (
             <Drawer open={true}>
                 <Menu onChange={this.handleChange} >
-                    <MenuItem style={styleOptions.title} >Cid Panel</MenuItem>
+                    <MenuItem style={style.title} >Cid Panel</MenuItem>
                     <Divider />
                     {cidNodes}
                 </Menu>
