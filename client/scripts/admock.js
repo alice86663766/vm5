@@ -1,5 +1,6 @@
 import React from 'react';
 import {render} from 'react-dom';
+import Websocket from './Websocket'
 import injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
@@ -39,6 +40,36 @@ No speed limit: displayed as 100fps in the graph. Should send "unthrottle".
 Poor connection: 10 fps.
 Intro poor connection: 3fps. Set initial fps to 3fps.
 */
+var LogPanel = React.createClass({
+    getInitialState: function() {
+        return {data: []}
+    },
+    handleData: function(data) {
+        let result = JSON.parse(data);
+        var cid = result["@data"]["@profile_tokens"].cid;
+        var index = _.findIndex(this.props.state.cids, function(item) {
+            return (item.cid == cid);
+        });
+        console.log(cid, index);
+        
+        if (index < 0) {
+            this.props.pushCid(cid);
+            if (this.props.state.activeCid == '') {
+                this.props.updateRootState("activeCid", cid);
+            }
+        }
+        this.setState({data: result});
+        console.log(result);
+    },
+    render: function() {
+        return (
+            <div>
+                <Websocket url="ws://qa-log-proxy.vm5apis.com" onMessage={this.handleData}/>
+            </div>
+        );
+    }
+});
+
 var Chart = React.createClass({
     postWebRequests: function (url, cid, commands) {
         var data = {
@@ -604,9 +635,9 @@ var WebSocketBlock = React.createClass ({
             this.setState({commands: commands});
             //Start sending requests to server
             var cid = this.props.cid;
-            this.setThrottlable("http://campaign.vm5apis.com" + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
+            this.setThrottlable(this.props.urlPrefix + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
             this.resetForm();
-            this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
+            this.postWebRequests(this.props.urlPrefix + "/v4/pre-schedule", cid, commands); //change to real url: delete the first part
         }
     },
     handleReset: function(e) {
@@ -619,7 +650,7 @@ var WebSocketBlock = React.createClass ({
             "type": "unthrottle"
         }]
         var cid = this.props.cid;
-        this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
+        this.postWebRequests(this.props.urlPrefix + "/v4/pre-schedule", cid, commands);
     },
     /*handleDelete: function(index) {
         var items = this.props.state.webItems;
@@ -659,8 +690,8 @@ var WebSocketBlock = React.createClass ({
         }
         return (
             <div style={style.div} >
-                <RaisedButton label="Intro" onClick={this.onChangePhase.bind(this, 'intro')} style={style.phaseButton} backgroundColor={this.state.phase == "intro" ? "#eeab58" : "#ffffff"} labelStyle={this.state.phase == "intro" ? style.buttonTextActive : style.buttonText} />
-                <RaisedButton label="During game" onClick={this.onChangePhase.bind(this, 'duringGame')} style={style.phaseButton} backgroundColor={this.state.phase == "duringGame" ? "#eeab58" : "#ffffff"} labelStyle={this.state.phase == "duringGame" ? style.buttonTextActive : style.buttonText} />
+                <RaisedButton label="Intro" onClick={this.onChangePhase.bind(this, 'intro')} style={style.phaseButton} backgroundColor={this.state.phase == "intro" ? "#fc981c" : "#ffffff"} labelStyle={this.state.phase == "intro" ? style.buttonTextActive : style.buttonText} />
+                <RaisedButton label="During game" onClick={this.onChangePhase.bind(this, 'duringGame')} style={style.phaseButton} backgroundColor={this.state.phase == "duringGame" ? "#fc981c" : "#ffffff"} labelStyle={this.state.phase == "duringGame" ? style.buttonTextActive : style.buttonText} />
             </div>
         );
     },
@@ -734,7 +765,7 @@ var WebSocketBlock = React.createClass ({
                 fontWeight: '400'
             },
             add: {
-                backgroundColor: '#eeab58',
+                backgroundColor: '#fc981c',
                 color: '#ffffff'
             },
             reset: {
@@ -923,7 +954,7 @@ var SettingPageThree = React.createClass ({
         }
         return (
             <div style={style.settingPage}>
-                <WebSocketBlock cid={this.props.cid} />
+                <WebSocketBlock cid={this.props.cid} urlPrefix={this.props.urlPrefix} />
             </div>            
         );
     }
@@ -974,7 +1005,7 @@ var SettingForm = React.createClass ({
                 );
             case 3:
                 return (
-                    <SettingPageThree cid={this.props.cid} />
+                    <SettingPageThree cid={this.props.cid} urlPrefix={this.props.urlPrefix} />
                 );
         }
     },
@@ -1001,37 +1032,6 @@ var SettingForm = React.createClass ({
             }.bind(this)
         });
     },
-    webSocketRequest: function() {
-        //after submission
-        //read webTime and webActions. re-generate new mapping (generate error when !no time limit but has time)
-        //generate urls for each request at specific times. stored in an array
-        //generate step chart 
-        //handle reset
-        //magic algorithm that makes this happen
-        /*var createItems = this.props.items.map(function(item, index) {
-            return (
-                <WebSocketItem handleDelete={this.props.handleDelete} key={index} index={index} item={item} />
-            );
-        }.bind(this));*/
-
-        //first make it throttable
-        
-        /*
-        var url = "/v3/trial/set-next-throttlable/:cid";
-        url = url.replace(/:cid/, cid);
-        url = "http://campaign.vm5apis.com" + url; //change to real url: delete this line
-        this.sendRequest(url);
-
-        var objs = this.state.webItems;
-        var cid = this.props.cid;
-        var mapping = this.props.mapping;
-        var requestArray = [];
-        _.forEach(objs, function(obj) {
-            if (obj.time == "0" && obj.action == "Poor connection") {
-
-            }
-        });*/
-    },
     prepareAndSendRequest: function() {
         var stateObj = this.state;
         var cid = this.props.cid;
@@ -1057,7 +1057,7 @@ var SettingForm = React.createClass ({
                     url = url.replace(/:code/, value);
                 }
                 console.log("url:", url);
-                url = "http://campaign.vm5apis.com" + url; //change to real url: delete this line
+                url = this.props.urlPrefix + url; //change to real url: delete this line
                 this.sendRequest(url);
             }
         }.bind(this));
@@ -1069,34 +1069,9 @@ var SettingForm = React.createClass ({
     },
     handleReset: function(e) {
         this.resetState(this.state.page);
-        var url = "http://campaign.vm5apis.com" + "/aux/reset/" + this.props.cid; //change to real url: delete the first string
+        var url = this.props.urlPrefix + "/aux/reset/" + this.props.cid; //change to real url: delete the first string
         this.sendRequest(url);
     },
-    /*onSubmitSetRoot: function(cid) {
-        $.ajax({
-            url: this.props.url,
-            dataType: 'json',
-            cache: false,
-            success: function(data){
-                var debugTimeLimit = 60;
-                if (data.timelimitCids[cid]) {
-                    debugTimeLimit = data.timelimitCids[cid];
-                }
-                console.log("updated should succeed");
-                console.log("Debug time limit:", debugTimeLimit);
-                var lastPoint = [debugTimeLimit];
-                var index = this.state.webItems.length - 1;
-                lastPoint.push(this.newPoint(index));
-                console.log("pushed array:", lastPoint);
-                this.props.updateRootState("newPoint", lastPoint); 
-                this.resetState(this.state.page);
-                //this.webSocketRequest();
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.log(this.props.url, status, err.toString());
-            }.bind(this)
-        });
-    },*/
     handleSubmit: function(e) {
         e.preventDefault();
         this.prepareAndSendRequest();
@@ -1107,7 +1082,8 @@ var SettingForm = React.createClass ({
     displayButton: function() {
         const style = {
             buttonActive: {
-                backgroundColor: '#00bcd4'
+                backgroundColor: '#3091e6',
+                color: '#ffffff'
             },
         };
         return (
@@ -1121,7 +1097,7 @@ var SettingForm = React.createClass ({
     displayResetSubmitButtons: function() {
         const style = {
             submit: {
-                backgroundColor: '#eeab58',
+                backgroundColor: '#fc981c',
                 color: '#ffffff'
             },
             reset: {
@@ -1167,8 +1143,12 @@ var SettingForm = React.createClass ({
 
 var CidPanel = React.createClass ({
     handleChange: function(e, value) {
-        console.log("called");
+        console.log("cid panel value:", value);
         this.props.updateRootState("activeCid", value);
+    },
+    handleSelect: function(e, key, value) {
+        console.log("select value:", value);
+        this.props.updateRootState("urlPrefix", value);
     },
     render: function() {
         const style = {
@@ -1191,6 +1171,19 @@ var CidPanel = React.createClass ({
                 fontWeight: '400',
                 fontSize: '28px',
                 marginTop: '10px'
+            }, 
+            div: {
+                padding: '0px 16px'
+            },
+            header: {
+                padding: '0px',
+                backgroundColor: '#fc981c',
+            },
+            headerFont: {
+                fontFamily: 'Roboto, sans-serif',
+                fontWeight: '300',
+                fontSize: '24px',
+                color: '#ffffff'
             }
         };
         var cidNodes = this.props.cids.map(function(cid) {
@@ -1208,9 +1201,18 @@ var CidPanel = React.createClass ({
         }.bind(this));
         return (
             <Drawer open={true}>
+                <Menu style={style.header}>
+                    <MenuItem key={1} primaryText="AdServer Dashboard" style={style.headerFont}/>
+                </Menu>
+                <div style={style.div}>
+                    <label>Server: </label>
+                    <DropDownMenu value={this.props.state.urlPrefix} onChange={this.handleSelect}>
+                        <MenuItem value="http://campaign.vm5apis.com" primaryText="Local" />
+                        <MenuItem value="http://mock.adserver.vm5apis.com" primaryText="Cloud" />
+                    </DropDownMenu>
+                </div>
+                <Divider />
                 <Menu onChange={this.handleChange} >
-                    <MenuItem style={style.title} >Cid Panel</MenuItem>
-                    <Divider />
                     {cidNodes}
                 </Menu>
             </Drawer>
@@ -1228,30 +1230,16 @@ var ContentBox = React.createClass({
                 this.setState({urlMapping: data});
             }.bind(this),
             error: function(xhr, status, err) {
-                console.log(this.props.url, status, err.toString());
+                alert("Can't load url mapping!");
             }.bind(this)
         });
     },
     getInitialState: function() {
         return {
-            cids:[{
-                    id: 1,
-                    cid: '5054bfde-6108-4ff7-9dc9-193511f407ea'
-                }, {
-                    id: 2,
-                    cid: '5e53695f-74cf-450f-86e1-11a9fa708398'
-                }, {
-                    id: 3,
-                    cid: '12344441-74cf-450f-86e1-11a9fa708398'
-                }, {
-                    id: 4,
-                    cid: '232f9ee9-74cf-450f-86e1-11a9fa708398'
-                }, {
-                    id: 5,
-                    cid: '88792378-74cf-450f-86e1-11a9fa708398'
-                }], 
-            activeCid: '5054bfde-6108-4ff7-9dc9-193511f407ea',
-            urlMapping: []
+            cids:[], 
+            activeCid: '',
+            urlMapping: [],
+            urlPrefix: 'http://mock.adserver.vm5apis.com'
         };
     },
     componentDidMount: function() {
@@ -1262,21 +1250,35 @@ var ContentBox = React.createClass({
         obj[key] = value;
         this.setState(obj);
     },
+    pushCid: function(cid) {
+        var array = this.state.cids;
+        var obj = {};
+        obj.id = array.length;
+        obj.cid = cid;
+        array.push(obj);
+        this.setState({cids: array});
+    },
     render: function() {
+        var debugUrl = this.state.urlPrefix + "/aux/debug/M"
         return (
             <MuiThemeProvider>
                 <div>
                     <Row>
                         <Col xs={12} md={3} >
-                            <CidPanel cids={this.state.cids} activeCid={this.state.activeCid} updateRootState={this.updateRootState}/>
+                            <CidPanel cids={this.state.cids} state={this.state} activeCid={this.state.activeCid} updateRootState={this.updateRootState}/>
                         </Col>
                         <Col xs={12} md={9} >
                             <Row>
                                 <Col xs={6} style={{padding: '20px'}} >
-                                    <SettingForm mapping={this.state.urlMapping} cid={this.state.activeCid} url={this.props.url} updateRootState={this.updateRootState} setRootTime={this.setRootTime} />
+                                    <SettingForm mapping={this.state.urlMapping} cid={this.state.activeCid} urlPrefix={this.state.urlPrefix} />
                                 </Col>
                                 <Col xs={6} style={{padding: '20px'}} >
-                                    <EventPanel cid={this.state.activeCid} url={this.props.url} pullInterval={500}/>
+                                    <EventPanel cid={this.state.activeCid} url={debugUrl} pullInterval={500}/>
+                                </Col>
+                            </Row>
+                            <Row>
+                                <Col xs={12} >
+                                    <LogPanel state={this.state} pushCid={this.pushCid} updateRootState={this.updateRootState} />
                                 </Col>
                             </Row>
                         </Col>
@@ -1288,5 +1290,5 @@ var ContentBox = React.createClass({
 });
 
 render(
-  <ContentBox url="http://campaign.vm5apis.com/aux/debug/M" />, document.getElementById('content') //change to real url
+  <ContentBox />, document.getElementById('content')
 );
