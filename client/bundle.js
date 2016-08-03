@@ -260,6 +260,7 @@
 	    },
 	    componentWillReceiveProps: function componentWillReceiveProps(props) {
 	        this.chart.xAxis[0].setExtremes(-3, props.time);
+	        // console.log(props.lineData[props.lineData.length-1]);
 	        if (props.lineData.length > 0 && props.lineData[props.lineData.length - 1].x > props.time || props.flagData.length > 0 && props.flagData[props.flagData.length - 1].x >= props.time) {
 	            alert("Time of web setting exceeds game time. Please reset!");
 	            var commands = [{
@@ -1476,7 +1477,7 @@
 	            cids: [],
 	            activeCid: '',
 	            urlMapping: [],
-	            urlPrefix: 'http://mock.adserver.vm5apis.com'
+	            urlPrefix: 'http://campaign.vm5apis.com'
 	        };
 	    },
 	    componentDidMount: function componentDidMount() {

@@ -138,9 +138,9 @@ var Chart = React.createClass({
     },
     componentWillReceiveProps: function(props) {
         this.chart.xAxis[0].setExtremes(-3, props.time);
+        console.log(props.lineData[props.lineData.length-1]);
         if ((props.lineData.length > 0 && props.lineData[props.lineData.length-1].x > props.time) || (props.flagData.length > 0 && props.flagData[props.flagData.length-1].x >= props.time)) {
-            console.log(props.lineData[props.lineData.length-1]);
-            alert("Time of web setting exceeds game time. Please reset!");
+            alert("Time of web setting exceeds game time. Please reset again.");
             var commands = [{
                 "trigger": "on-connect",
                 "type": "unthrottle"
@@ -427,11 +427,23 @@ var RadioButtons = React.createClass ({
 
 var TextboxInput = React.createClass ({
     handleChange: function(e) {
-        this.props.updateState(this.props.id, e.target.value);
+        e.preventDefault();
+        if (this.props.id == "timeLimit") {
+            this.props.updateRootState("timeLimit", e.target.value);
+        }
+        else {
+            this.props.updateState(this.props.id, e.target.value);
+        }
     },
     render: function() {
         var key = this.props.id;
-        var updatedValue = this.props.state[key];
+        var updatedValue = '';
+        if (key == "timeLimit") {
+            updatedValue = this.props.rootState.timeLimit;
+        }
+        else {
+            updatedValue = this.props.state[key];
+        }
         return (
             <TextField hintText={this.props.label} floatingLabelText={this.props.label} value={updatedValue} onChange={this.handleChange} />
         );
@@ -553,8 +565,20 @@ var WebSocketBlock = React.createClass ({
         }
         return commands;
     },
+    sendRequest: function(url) {
+        //console.log("sent!");
+        $.ajax({
+            url: url,
+            dataType: 'json',
+            cache: false,
+            error: function(xhr, status, err) {
+                alert("Error!!");
+            }.bind(this)
+        });
+    },
     handleAdd: function (e) {
         e.preventDefault();
+        console.log("Added!");
         var passByReference = {noError: true};
         if (this.state.phase == "duringGame") {
             this.checkValidity("Start Time", "startTime", passByReference);
@@ -565,29 +589,18 @@ var WebSocketBlock = React.createClass ({
                 }
             }
         }
-        var startTime = 0;
-        var duration = 0;
-        var debugTimeLimit = parseFloat(this.props.debugTimeLimit);
-        if (this.state.startTime) {
-            startTime = parseFloat(this.state.startTime);
+
+        if (this.props.timeLimit != '') {
+            alert("Time limit not empty. Submitted for you.");
+            var cid = this.props.cid;
+            var timeLimit = this.props.timeLimit;
+            var url = this.props.urlPrefix + "/v4/trial/set-next-timelimit-"+ timeLimit + "-secs/" + cid;
+            console.log(url);
+            this.sendRequest(url);
+            this.props.updateRootState("timeLimit", '');
         }
-        if (this.state.duration) {
-            duration = parseFloat(this.state.duration);
-        }
-        if ((startTime + duration) > debugTimeLimit) {
-            if (startTime > debugTimeLimit) {
-                passByReference.noError = false;
-                alert("Your start time exceeds time limit. Please do it again.");
-            }
-            else {
-                duration = debugTimeLimit - startTime;
-                if (duration == 0) {
-                    passByReference.noError = false;
-                    alert("Please don't set ftp at the end of game.");
-                }
-            }
-        }
-        if (passByReference.noError) {
+
+        if (passByReference.noError && this.props.timeLimit == '') {
             var commands = this.state.commands;
             var commandObj = {
                 "trigger": "after-connect",
@@ -623,14 +636,14 @@ var WebSocketBlock = React.createClass ({
                     commandObj.type = "set-fps";
                     params.fps = 10;
                     commandObj["params"] = params;
-                    unthrottleObj.delay = (startTime + 3 + duration)*1000;
+                    unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration))*1000;
                 }
                 else if (this.state.action == "set-fps") {
                     params.fps = parseFloat(this.state.fps);
                     commandObj["params"] = params;
-                    unthrottleObj.delay = (startTime + 3 + duration)*1000;
+                    unthrottleObj.delay = (parseFloat(this.state.startTime) + 3 + parseFloat(this.state.duration))*1000;
                 }
-                commandObj.delay = (startTime + 3)*1000;
+                commandObj.delay = (parseFloat(this.state.startTime) + 3)*1000;
                 commands = this.deleteRepeatCommand(commands, commandObj);
                 if (unthrottleObj.delay != 0) {
                     commands = this.deleteRepeatCommand(commands, unthrottleObj);
@@ -658,10 +671,9 @@ var WebSocketBlock = React.createClass ({
             //Start sending requests to server
             var cid = this.props.cid;
             this.setThrottlable(this.props.urlPrefix + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
+            this.resetForm();
             this.postWebRequests(this.props.urlPrefix + "/v4/pre-schedule", cid, commands); //change to real url: delete the first part
-            console.log("Added!");
         }
-        this.resetForm();
     },
     handleReset: function(e) {
         e.preventDefault();
@@ -874,7 +886,7 @@ var SettingPageOne = React.createClass ({
                     <h3 style={style.title}>General Settings</h3>
                     <Divider style={style.shortLine} />
                     <TextboxInput order="1" label="Language" id="language" state={this.props.state} updateState={this.props.updateState} />
-                    <TextboxInput order="2" label="Time Limit" id="timeLimit" state={this.props.state} updateState={this.props.updateState} />
+                    <TextboxInput order="2" label="Time Limit" id="timeLimit" state={this.props.state} rootState={this.props.rootState} updateState={this.props.updateState} updateRootState={this.props.updateRootState} />
                     <Dropdown order="3" label="HTTP Response" id="httpSelect" state={this.props.state} options={this.props.httpSelectOptions} updateState={this.props.updateState} />
                     {this.displayHTTPField()}
                 </Paper>
@@ -977,43 +989,17 @@ var SettingPageThree = React.createClass ({
         }
         return (
             <div style={style.settingPage}>
-                <WebSocketBlock cid={this.props.cid} urlPrefix={this.props.urlPrefix} debugTimeLimit={this.props.debugTimeLimit} />
+                <WebSocketBlock cid={this.props.cid} timeLimit={this.props.timeLimit} urlPrefix={this.props.urlPrefix} updateRootState={this.props.updateRootState} />
             </div>            
         );
     }
 });
 
 var SettingForm = React.createClass ({
-    loadDebugTime: function() {
-        $.ajax({
-            url: this.props.urlPrefix + "/aux/debug/M",
-            dataType: 'json',
-            cache: false,
-            success: function(data){
-                var cid = this.props.cid;
-                var debugTime = data.v4.timelimitCids[cid];
-                if (typeof debugTime == 'undefined') {
-                    debugTime = 60;
-                }
-                else {
-                    parseFloat(debugTime);
-                }
-                this.setState({debugTimeLimit: debugTime});
-                console.log("debugTime loaded:", debugTime);
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.log(this.props.url, status, err.toString());
-            }.bind(this)
-        });
-    },
-    componentDidMount: function() {
-        this.loadDebugTime();
-    },
     getInitialState: function() {
         return {
             page: 1, 
-            language: '', 
-            timeLimit:'' , 
+            language: '',  
             httpResponse:'',
             httpSelect:'Not set', 
             noVm:'Not set', 
@@ -1022,15 +1008,13 @@ var SettingForm = React.createClass ({
             imgCorrupts:'Not set', 
             videoCorrupts: false, 
             preRecordedVideo: false,
-            mapping: [],
-            debugTimeLimit: ''
+            mapping: []
         };
     },
     resetState: function(currentPage) {
         this.setState({
             page: currentPage, 
-            language: '', 
-            timeLimit:'' , 
+            language: '',  
             httpResponse:'',
             httpSelect:'Not set',  
             noVm:'Not set', 
@@ -1039,15 +1023,14 @@ var SettingForm = React.createClass ({
             imgCorrupts:'Not set', 
             videoCorrupts: false, 
             preRecordedVideo: false,  
-            mapping: [],
-            debugTimeLimit: ''
+            mapping: []
         });
     },
     displayForm: function(httpSelectOptions, campaignExpiredOptions, noVmOptions, corruptedImageOptions) {
         switch (this.state.page) {
             case 1:
                 return (
-                    <SettingPageOne state={this.state} updateState={this.updateState} onChangeChecked={this.onChangeChecked} httpSelectOptions={httpSelectOptions} campaignExpiredOptions={campaignExpiredOptions} />
+                    <SettingPageOne timeLimit={this.props.timeLimit} rootState={this.props.rootState} state={this.state} updateState={this.updateState} updateRootState={this.props.updateRootState} onChangeChecked={this.onChangeChecked} httpSelectOptions={httpSelectOptions} campaignExpiredOptions={campaignExpiredOptions} />
                 );
             case 2:
                 return (
@@ -1055,7 +1038,7 @@ var SettingForm = React.createClass ({
                 );
             case 3:
                 return (
-                    <SettingPageThree cid={this.props.cid} urlPrefix={this.props.urlPrefix} debugTimeLimit={this.state.debugTimeLimit} />
+                    <SettingPageThree cid={this.props.cid} timeLimit={this.props.timeLimit} urlPrefix={this.props.urlPrefix} updateRootState={this.props.updateRootState} />
                 );
         }
     },
@@ -1077,9 +1060,6 @@ var SettingForm = React.createClass ({
             url: url,
             dataType: 'json',
             cache: false,
-            success: function() {
-                this.loadDebugTime();
-            }.bind(this),
             error: function(xhr, status, err) {
                 alert("Error!!");
             }.bind(this)
@@ -1089,6 +1069,13 @@ var SettingForm = React.createClass ({
         var stateObj = this.state;
         var cid = this.props.cid;
         var mapping = this.props.mapping;
+        if (this.props.timeLimit != '') {
+            console.log("time limit not empty");
+            var timeLimit = this.props.timeLimit;
+            var url = this.props.urlPrefix + "/v4/trial/set-next-timelimit-"+ timeLimit + "-secs/" + cid;
+            this.sendRequest(url);
+            this.props.updateRootState("timeLimit", '');
+        }
         _.forEach(stateObj, function(value, key) {
             if (key in mapping && value && (value != "Not set")) { //only look at attributes that are set
                 var url = '';
@@ -1118,10 +1105,6 @@ var SettingForm = React.createClass ({
     },
     handleClick: function(input) {
         this.setState({page: input});
-        if (input == 3) {
-            this.prepareAndSendRequest();
-            console.log("Submitted");
-        }
         console.log(input);
     },
     handleReset: function(e) {
@@ -1132,6 +1115,7 @@ var SettingForm = React.createClass ({
     handleSubmit: function(e) {
         e.preventDefault();
         this.prepareAndSendRequest();
+        var cid = this.props.cid;
         //this.onSubmitSetRoot(cid);
         console.log("Submitted");
     },
@@ -1295,7 +1279,8 @@ var ContentBox = React.createClass({
             cids:[], 
             activeCid: '',
             urlMapping: [],
-            urlPrefix: 'http://campaign.vm5apis.com'
+            urlPrefix: 'http://campaign.vm5apis.com',
+            timeLimit: ''
         };
     },
     componentDidMount: function() {
@@ -1314,52 +1299,8 @@ var ContentBox = React.createClass({
         array.push(obj);
         this.setState({cids: array});
     },
-    displayMainPanel: function() {
-        const style = {
-            div: {
-                padding: '285px 0px'
-            }
-        }
-        var debugUrl = this.state.urlPrefix + "/aux/debug/M";
-        if (this.state.activeCid) {
-            return (
-                <Col xs={12} md={9} >
-                    <Row>
-                        <Col xs={6} style={{padding: '20px'}} >
-                            <SettingForm mapping={this.state.urlMapping} cid={this.state.activeCid} urlPrefix={this.state.urlPrefix} />
-                        </Col>
-                        <Col xs={6} style={{padding: '20px'}} >
-                            <EventPanel cid={this.state.activeCid} url={debugUrl} pullInterval={500}/>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col xs={12} >
-                            <LogPanel state={this.state} pushCid={this.pushCid} updateRootState={this.updateRootState} />
-                        </Col>
-                    </Row>
-                </Col>
-            );
-        }
-        else {
-            return (
-                <Col xs={12} md={9} >
-                    <Row center="xs">
-                        <Col xs={9}>
-                            <div style={style.div}>
-                                <h1>No active cid at this moment. Start testing to display active cids.</h1>
-                            </div>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col xs={12} >
-                            <LogPanel state={this.state} pushCid={this.pushCid} updateRootState={this.updateRootState} />
-                        </Col>
-                    </Row>
-                </Col>
-            );
-        }
-    },
     render: function() {
+        var debugUrl = this.state.urlPrefix + "/aux/debug/M"
         return (
             <MuiThemeProvider>
                 <div>
@@ -1367,7 +1308,21 @@ var ContentBox = React.createClass({
                         <Col xs={12} md={3} >
                             <CidPanel cids={this.state.cids} state={this.state} activeCid={this.state.activeCid} updateRootState={this.updateRootState}/>
                         </Col>
-                        {this.displayMainPanel()}
+                        <Col xs={12} md={9} >
+                            <Row>
+                                <Col xs={6} style={{padding: '20px'}} >
+                                    <SettingForm timeLimit={this.state.timeLimit} rootState={this.state} updateRootState={this.updateRootState} mapping={this.state.urlMapping} cid={this.state.activeCid} urlPrefix={this.state.urlPrefix} />
+                                </Col>
+                                <Col xs={6} style={{padding: '20px'}} >
+                                    <EventPanel timeLimit={this.state.timeLimit} cid={this.state.activeCid} url={debugUrl} pullInterval={500}/>
+                                </Col>
+                            </Row>
+                            <Row>
+                                <Col xs={12} >
+                                    <LogPanel state={this.state} pushCid={this.pushCid} updateRootState={this.updateRootState} />
+                                </Col>
+                            </Row>
+                        </Col>
                     </Row>
                 </div>
             </MuiThemeProvider>

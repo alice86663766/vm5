@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "webpack-dev-server --port 3000 --progress --colors --content-base client/",
+    "start": "webpack-dev-server --port 3000 --host 0.0.0.0 --progress --colors --content-base client/",
     "build": "webpack --config webpack.config.js"
   },
   "author": "Alice Chen",

@@ -4,7 +4,7 @@ var webpack = require('webpack');
 module.exports = {
 	entry: './client/scripts/admock.js',
 	output: {
-		path: path.join(__dirname, 'client/scripts'),
+		path: path.join(__dirname, 'client'),
 		filename: 'bundle.js'
 	},
 	module: {
