@@ -1,5 +1,6 @@
 import React from 'react';
 import {render} from 'react-dom';
+var ReactDOM = require('react-dom');
 import Websocket from './Websocket'
 import injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
@@ -24,6 +25,8 @@ import {Tabs, Tab} from 'material-ui/Tabs';
 import SvgIcon from 'material-ui/SvgIcon';
 import FontIcon from 'material-ui/FontIcon';
 import ContentSend from 'material-ui/svg-icons/content/send';
+import Dialog from 'material-ui/Dialog';
+import {Table, TableBody, TableFooter, TableHeader, TableHeaderColumn, TableRow, TableRowColumn} from 'material-ui/Table';
 
 import {Grid} from 'react-flexbox-grid/lib/index';
 import {Row} from 'react-flexbox-grid/lib/index';
@@ -50,13 +53,19 @@ var LogPanel = React.createClass({
         var index = _.findIndex(this.props.state.cids, function(item) {
             return (item.cid == cid);
         });
-        console.log(cid, index);
         
         if (index < 0) {
-            this.props.pushCid(cid);
+            var name = result.ua.browser.name + " (" + cid.substring(0, 8) + ")";
+            var details = result.ua.browser.name;
+            if (result.ua.device.vendor) {
+                name = result.ua.device.vendor + ", " + result.ua.browser.name + " (" + cid.substring(0, 8) + ")";
+                details = result.ua.device.vendor + ", " + result.ua.device.model + ", " + result.ua.browser.name;
+            }
+            this.props.pushCid(cid, name, details);
             if (this.props.state.activeCid == '') {
                 this.props.updateRootState("activeCid", cid);
             }
+            console.log(cid, name, details);
         }
         this.setState({data: result});
         console.log(result);
@@ -1009,6 +1018,23 @@ var SettingForm = React.createClass ({
     componentDidMount: function() {
         this.loadDebugTime();
     },
+    componentWillReceiveProps: function(props) {
+        this.setState({
+            page: 1, 
+            language: '', 
+            timeLimit:'' , 
+            httpResponse:'',
+            httpSelect:'Not set',  
+            noVm:'Not set', 
+            campaignExpired: 'Not set', 
+            vmNotYours: false, 
+            imgCorrupts:'Not set', 
+            videoCorrupts: false, 
+            preRecordedVideo: false,  
+            mapping: [],
+            debugTimeLimit: ''
+        });
+    },
     getInitialState: function() {
         return {
             page: 1, 
@@ -1198,6 +1224,14 @@ var SettingForm = React.createClass ({
 });
 
 var CidPanel = React.createClass ({
+    getInitialState: function() {
+        return ({
+            openManager: false,
+            openEditPage: false,
+            selectedRows: [],
+            name: ''
+        })
+    },
     handleChange: function(e, value) {
         console.log("cid panel value:", value);
         this.props.updateRootState("activeCid", value);
@@ -1206,19 +1240,104 @@ var CidPanel = React.createClass ({
         console.log("select value:", value);
         this.props.updateRootState("urlPrefix", value);
     },
+    onClickManager: function(e) {
+        console.log("clicked!");
+        this.setState({openManager: true});
+    },
+    onRowSelection: function(selectedRows) {
+        console.log(selectedRows);
+        this.setState({selectedRows: selectedRows});
+    },
+    handleClose: function(e) {
+        this.setState({openManager: false});
+    },
+    handleEdit: function() {
+        this.setState({openEditPage: true});
+    },
+    handleCloseEdit: function(e) {
+        this.setState({openEditPage: false});
+    },
+    handleSubmitName: function(e) {
+        this.setState({openEditPage: false});
+        this.props.updateRootCidName(this.state.selectedRows[0], this.state.name);
+    },
+    handleChangeName: function(e) {
+        console.log("Changed!");
+        // ReactDOM.findDOMNode(this.refs.nameInput).focus();
+
+        this.setState({name: e.target.value});
+
+        // ReactDOM.findDOMNode(this.refs.nameInput).focus();
+    },
+    displayTable: function() {
+        const style = {
+            noWidth: {
+                width: '36px'
+            },
+            nameWidth: {
+                width: '150px'
+            }
+        };
+        return (
+            <Table height="125px" fixedHeader={true} selectable={true} multiSelectable={false} onRowSelection={this.onRowSelection}>
+                <TableHeader displaySelectAll={false} adjustForCheckbox={true} enableSelectAll={false}>
+                    <TableRow>
+                        <TableHeaderColumn style={style.noWidth}>No.</TableHeaderColumn>
+                        <TableHeaderColumn style={style.nameWidth} tooltip="Display name of the device">Name</TableHeaderColumn>
+                        <TableHeaderColumn tooltip="CID of the device">CID</TableHeaderColumn>
+                        <TableHeaderColumn tooltip="Details of the device">Details</TableHeaderColumn>
+                    </TableRow>
+                </TableHeader>
+                <TableBody displayRowCheckbox={true} deselectOnClickaway={false} showRowHover={true} stripedRows={false}>
+                    {this.props.cids.map((row, index) => (
+                        <TableRow key={index} selected={this.state.selectedRows.indexOf(row.id) !== -1}>
+                            <TableRowColumn style={style.noWidth}>{row.id}</TableRowColumn>
+                            <TableRowColumn style={style.nameWidth}>{row.name}</TableRowColumn>
+                            <TableRowColumn>{row.cid}</TableRowColumn>
+                            <TableRowColumn>{row.details}</TableRowColumn>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        );
+    },
+    displayDeviceManager: function() {
+        const actions = [
+            <FlatButton label="Edit" primary={true} disabled={this.state.selectedRows.length == 0} onTouchTap={this.handleEdit} />,
+            <FlatButton label="Done" primary={true} onTouchTap={this.handleClose} />
+        ];
+        const changeName = [
+            <FlatButton type="submit" label="Submit" primary={true} onTouchTap={this.handleSubmitName} />,
+            <FlatButton label="Cancel" primary={true} onTouchTap={this.handleCloseEdit} />
+        ];
+        var row = 0;
+        if (this.state.selectedRows.length > 0) {
+            row = this.state.selectedRows[0];
+        }
+        if (this.props.cids.length > 0) {
+            return (
+                <Dialog actions={actions} modal={false} open={this.state.openManager} onRequestClose={this.handleClose}>
+                    {this.displayTable()}
+                    <Dialog actions={changeName} modal={false} open={this.state.openEditPage} onRequestClose={this.handleCloseEdit}>
+                        <input ref="nameInput" hintText="Enter a new name" floatingLabelText="Name" value={this.state.name} onChange={this.handleChangeName} />
+                    </Dialog>
+                </Dialog>
+            );
+        }
+    },
     render: function() {
         const style = {
             active: {
                 backgroundColor: '#cccccc',
-                fontSize: '10',
-                fontFamily: 'monospace',
+                fontFamily: 'Roboto, sans-serif',
+                fontSize: '14px',
                 cursor: 'pointer', 
                 width: '256px'
             },
             normal: {
                 backgroundColor: '#ffffff',
-                fontSize: '10',
-                fontFamily: 'monospace',
+                fontFamily: 'Roboto, sans-serif',
+                fontSize: '14px',
                 cursor: 'pointer',
                 width: '256px'
             },
@@ -1240,37 +1359,53 @@ var CidPanel = React.createClass ({
                 fontWeight: '300',
                 fontSize: '24px',
                 color: '#ffffff'
+            },
+            managerButton: {
+                margin: 12,
+            },
+            buttonTextActive: {
+                textTransform: 'capitalize',
+                color: '#ffffff'
+            },
+            menuHeight: {
+                height: '536px'
+            },
+            label: {
+                fontFamily: 'Roboto, sans-serif',
+                fontWeight: '400',
+                fontSize: '16px'
             }
         };
         var cidNodes = this.props.cids.map(function(cid) {
             var displayCid = cid.cid.substring(0, 25) + "...";
-            if (this.props.activeCid == cid.cid) {
-                return(
-                    <MenuItem key={cid.id} value={cid.cid} primaryText={displayCid} rightIcon={<ArrowDropRight />} style={style.active}/>
-                );
-            }
-            else {
-                return(
-                    <MenuItem key={cid.id} value={cid.cid} primaryText={displayCid} style={style.normal}/>
-                );
-            }
+            return(
+                <MenuItem key={cid.id} value={cid.cid} primaryText={cid.name == '' ? displayCid : cid.name} rightIcon={this.props.activeCid == cid.cid ? <ArrowDropRight /> : null} style={this.props.activeCid == cid.cid ? style.active : style.normal}/>
+            );
         }.bind(this));
+        var row = this.state.selectedRows[0];
         return (
             <Drawer open={true}>
                 <Menu style={style.header}>
                     <MenuItem key={1} primaryText="AdServer Dashboard" style={style.headerFont}/>
                 </Menu>
                 <div style={style.div}>
-                    <label>Server: </label>
+                    <label style={style.label}>Server: </label>
                     <DropDownMenu value={this.props.state.urlPrefix} onChange={this.handleSelect}>
                         <MenuItem value="http://campaign.vm5apis.com" primaryText="Local" />
                         <MenuItem value="http://mock.adserver.vm5apis.com" primaryText="Cloud" />
                     </DropDownMenu>
                 </div>
                 <Divider />
-                <Menu onChange={this.handleChange} >
+                <Menu onChange={this.handleChange} style={style.menuHeight} >
                     {cidNodes}
                 </Menu>
+                <Divider />
+                <Row center="xs">
+                    <Col xs={12}>
+                        <RaisedButton label="Device Manager" disabled={this.props.cids.length == 0} onClick={this.onClickManager} style={style.managerButton} backgroundColor="#fc981c" labelStyle={style.buttonTextActive} /> 
+                    </Col>
+                </Row>
+                {this.displayDeviceManager()}
             </Drawer>
         );
     }
@@ -1292,7 +1427,17 @@ var ContentBox = React.createClass({
     },
     getInitialState: function() {
         return {
-            cids:[], 
+            cids:[{
+                id: 0,
+                cid: "5054bfde-6108-4ff7-9dc9-193511f407ea",
+                name: "Sony Xperia",
+                details: "LG, Nexus 5"
+            }, {
+                id: 1,
+                cid: "5e53695f-74cf-450f-86e1-11a9fa708398",
+                name: "Alice's mac",
+                details: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36"
+            }], 
             activeCid: '',
             urlMapping: [],
             urlPrefix: 'http://campaign.vm5apis.com'
@@ -1306,11 +1451,19 @@ var ContentBox = React.createClass({
         obj[key] = value;
         this.setState(obj);
     },
-    pushCid: function(cid) {
+    updateRootCidName: function(index, name) {
+        var cids = this.state.cids;
+        console.log("index:", index);
+        cids[index].name = name;
+        this.setState({cids: cids});
+    },
+    pushCid: function(cid, name, details) {
         var array = this.state.cids;
         var obj = {};
         obj.id = array.length;
         obj.cid = cid;
+        obj.name = name;
+        obj.details = details;
         array.push(obj);
         this.setState({cids: array});
     },
@@ -1346,7 +1499,7 @@ var ContentBox = React.createClass({
                     <Row center="xs">
                         <Col xs={9}>
                             <div style={style.div}>
-                                <h1>No active cid at this moment. Start testing to display active cids.</h1>
+                                <h1>No active device being tested at this moment. Start testing to display dashboard.</h1>
                             </div>
                         </Col>
                     </Row>
@@ -1365,7 +1518,7 @@ var ContentBox = React.createClass({
                 <div>
                     <Row>
                         <Col xs={12} md={3} >
-                            <CidPanel cids={this.state.cids} state={this.state} activeCid={this.state.activeCid} updateRootState={this.updateRootState}/>
+                            <CidPanel cids={this.state.cids} state={this.state} activeCid={this.state.activeCid} updateRootState={this.updateRootState} updateRootCidName={this.updateRootCidName}/>
                         </Col>
                         {this.displayMainPanel()}
                     </Row>
