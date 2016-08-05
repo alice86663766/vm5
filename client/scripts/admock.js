@@ -481,7 +481,6 @@ var WebSocketBlock = React.createClass ({
     },
     resetForm: function() {
         this.setState({
-            phase: 'intro',
             action: 'poor',
             startTime: '',
             duration: '', 
@@ -669,8 +668,8 @@ var WebSocketBlock = React.createClass ({
             this.setThrottlable(this.props.urlPrefix + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
             this.postWebRequests(this.props.urlPrefix + "/v4/pre-schedule", cid, commands); //change to real url: delete the first part
             console.log("Added!");
+            this.resetForm();
         }
-        this.resetForm();
     },
     handleReset: function(e) {
         e.preventDefault();
@@ -1224,14 +1223,6 @@ var SettingForm = React.createClass ({
 });
 
 var CidPanel = React.createClass ({
-    getInitialState: function() {
-        return ({
-            openManager: false,
-            openEditPage: false,
-            selectedRows: [],
-            name: ''
-        })
-    },
     handleChange: function(e, value) {
         console.log("cid panel value:", value);
         this.props.updateRootState("activeCid", value);
@@ -1242,88 +1233,7 @@ var CidPanel = React.createClass ({
     },
     onClickManager: function(e) {
         console.log("clicked!");
-        this.setState({openManager: true});
-    },
-    onRowSelection: function(selectedRows) {
-        console.log(selectedRows);
-        this.setState({selectedRows: selectedRows});
-    },
-    handleClose: function(e) {
-        this.setState({openManager: false});
-    },
-    handleEdit: function() {
-        this.setState({openEditPage: true});
-    },
-    handleCloseEdit: function(e) {
-        this.setState({openEditPage: false});
-    },
-    handleSubmitName: function(e) {
-        this.setState({openEditPage: false});
-        this.props.updateRootCidName(this.state.selectedRows[0], this.state.name);
-    },
-    handleChangeName: function(e) {
-        console.log("Changed!");
-        // ReactDOM.findDOMNode(this.refs.nameInput).focus();
-
-        this.setState({name: e.target.value});
-
-        // ReactDOM.findDOMNode(this.refs.nameInput).focus();
-    },
-    displayTable: function() {
-        const style = {
-            noWidth: {
-                width: '36px'
-            },
-            nameWidth: {
-                width: '150px'
-            }
-        };
-        return (
-            <Table height="125px" fixedHeader={true} selectable={true} multiSelectable={false} onRowSelection={this.onRowSelection}>
-                <TableHeader displaySelectAll={false} adjustForCheckbox={true} enableSelectAll={false}>
-                    <TableRow>
-                        <TableHeaderColumn style={style.noWidth}>No.</TableHeaderColumn>
-                        <TableHeaderColumn style={style.nameWidth} tooltip="Display name of the device">Name</TableHeaderColumn>
-                        <TableHeaderColumn tooltip="CID of the device">CID</TableHeaderColumn>
-                        <TableHeaderColumn tooltip="Details of the device">Details</TableHeaderColumn>
-                    </TableRow>
-                </TableHeader>
-                <TableBody displayRowCheckbox={true} deselectOnClickaway={false} showRowHover={true} stripedRows={false}>
-                    {this.props.cids.map((row, index) => (
-                        <TableRow key={index} selected={this.state.selectedRows.indexOf(row.id) !== -1}>
-                            <TableRowColumn style={style.noWidth}>{row.id}</TableRowColumn>
-                            <TableRowColumn style={style.nameWidth}>{row.name}</TableRowColumn>
-                            <TableRowColumn>{row.cid}</TableRowColumn>
-                            <TableRowColumn>{row.details}</TableRowColumn>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        );
-    },
-    displayDeviceManager: function() {
-        const actions = [
-            <FlatButton label="Edit" primary={true} disabled={this.state.selectedRows.length == 0} onTouchTap={this.handleEdit} />,
-            <FlatButton label="Done" primary={true} onTouchTap={this.handleClose} />
-        ];
-        const changeName = [
-            <FlatButton type="submit" label="Submit" primary={true} onTouchTap={this.handleSubmitName} />,
-            <FlatButton label="Cancel" primary={true} onTouchTap={this.handleCloseEdit} />
-        ];
-        var row = 0;
-        if (this.state.selectedRows.length > 0) {
-            row = this.state.selectedRows[0];
-        }
-        if (this.props.cids.length > 0) {
-            return (
-                <Dialog actions={actions} modal={false} open={this.state.openManager} onRequestClose={this.handleClose}>
-                    {this.displayTable()}
-                    <Dialog actions={changeName} modal={false} open={this.state.openEditPage} onRequestClose={this.handleCloseEdit}>
-                        <input ref="nameInput" hintText="Enter a new name" floatingLabelText="Name" value={this.state.name} onChange={this.handleChangeName} />
-                    </Dialog>
-                </Dialog>
-            );
-        }
+        this.props.updateRootState("openManager", true);
     },
     render: function() {
         const style = {
@@ -1382,7 +1292,6 @@ var CidPanel = React.createClass ({
                 <MenuItem key={cid.id} value={cid.cid} primaryText={cid.name == '' ? displayCid : cid.name} rightIcon={this.props.activeCid == cid.cid ? <ArrowDropRight /> : null} style={this.props.activeCid == cid.cid ? style.active : style.normal}/>
             );
         }.bind(this));
-        var row = this.state.selectedRows[0];
         return (
             <Drawer open={true}>
                 <Menu style={style.header}>
@@ -1390,7 +1299,7 @@ var CidPanel = React.createClass ({
                 </Menu>
                 <div style={style.div}>
                     <label style={style.label}>Server: </label>
-                    <DropDownMenu value={this.props.state.urlPrefix} onChange={this.handleSelect}>
+                    <DropDownMenu value={this.props.urlPrefix} onChange={this.handleSelect}>
                         <MenuItem value="http://campaign.vm5apis.com" primaryText="Local" />
                         <MenuItem value="http://mock.adserver.vm5apis.com" primaryText="Cloud" />
                     </DropDownMenu>
@@ -1405,8 +1314,106 @@ var CidPanel = React.createClass ({
                         <RaisedButton label="Device Manager" disabled={this.props.cids.length == 0} onClick={this.onClickManager} style={style.managerButton} backgroundColor="#fc981c" labelStyle={style.buttonTextActive} /> 
                     </Col>
                 </Row>
-                {this.displayDeviceManager()}
             </Drawer>
+        );
+    }
+});
+
+var DialogPanel = React.createClass({
+    getInitialState: function() {
+        return ({
+            openEditPage: false,
+            selectedRows: [],
+            name: ''
+        });
+    },
+    resetState: function() {
+        this.setState ({
+            openEditPage: false,
+            selectedRows: [],
+            name: ''
+        });
+    },
+    onRowSelection: function(selectedRows) {
+        console.log(selectedRows);
+        if (selectedRows.length > 0) {
+            var row = selectedRows[0];
+            this.setState({name: this.props.cids[row].name});
+        }
+        this.setState({selectedRows: selectedRows});
+    },
+    handleClose: function(e) {
+        this.props.updateRootState("openManager", false);
+        this.resetState();
+    },
+    handleEdit: function() {
+        this.setState({openEditPage: true});
+    },
+    handleCloseEdit: function(e) {
+        this.resetState();
+    },
+    handleSubmitName: function(e) {
+        this.setState({openEditPage: false});
+        this.props.updateRootCidName(this.state.selectedRows[0], this.state.name);
+    },
+    handleChangeName: function(e) {
+        console.log("Changed!");
+        // ReactDOM.findDOMNode(this.refs.nameInput).focus();
+        this.setState({name: e.target.value});
+        // ReactDOM.findDOMNode(this.refs.nameInput).focus();
+    },
+    displayTable: function() {
+        const style = {
+            noWidth: {
+                width: '36px'
+            },
+            nameWidth: {
+                width: '150px'
+            }
+        };
+        return (
+            <Table height="250px" fixedHeader={true} selectable={true} multiSelectable={false} onRowSelection={this.onRowSelection}>
+                <TableHeader displaySelectAll={false} adjustForCheckbox={true} enableSelectAll={false}>
+                    <TableRow>
+                        <TableHeaderColumn style={style.noWidth}>No.</TableHeaderColumn>
+                        <TableHeaderColumn style={style.nameWidth} tooltip="Display name of the device">Name</TableHeaderColumn>
+                        <TableHeaderColumn tooltip="CID of the device">CID</TableHeaderColumn>
+                        <TableHeaderColumn tooltip="Details of the device">Details</TableHeaderColumn>
+                    </TableRow>
+                </TableHeader>
+                <TableBody displayRowCheckbox={true} deselectOnClickaway={false} showRowHover={true} stripedRows={false}>
+                    {this.props.cids.map((row, index) => (
+                        <TableRow key={index} selected={this.state.selectedRows.indexOf(row.id) !== -1}>
+                            <TableRowColumn style={style.noWidth}>{row.id}</TableRowColumn>
+                            <TableRowColumn style={style.nameWidth}>{row.name}</TableRowColumn>
+                            <TableRowColumn>{row.cid}</TableRowColumn>
+                            <TableRowColumn>{row.details}</TableRowColumn>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        );
+    },
+    render: function() {
+        const actions = [
+            <FlatButton label="Edit" primary={true} disabled={this.state.selectedRows.length == 0} onTouchTap={this.handleEdit} />,
+            <FlatButton label="Done" primary={true} onTouchTap={this.handleClose} />
+        ];
+        const changeName = [
+            <FlatButton label="Submit" primary={true} onTouchTap={this.handleSubmitName} />,
+            <FlatButton label="Cancel" primary={true} onTouchTap={this.handleCloseEdit} />
+        ];
+        var row = 0;
+        if (this.state.selectedRows.length > 0) {
+            row = this.state.selectedRows[0];
+        }
+        return (
+            <Dialog actions={actions} modal={false} open={this.props.openManager} onRequestClose={this.handleClose}>
+                {this.displayTable()}
+                <Dialog actions={changeName} modal={false} open={this.state.openEditPage} onRequestClose={this.handleCloseEdit}>
+                    <TextField hintText="Enter a new name" floatingLabelText="Name" value={this.state.name} onChange={this.handleChangeName} />
+                </Dialog>
+            </Dialog>
         );
     }
 });
@@ -1427,20 +1434,11 @@ var ContentBox = React.createClass({
     },
     getInitialState: function() {
         return {
-            cids:[{
-                id: 0,
-                cid: "5054bfde-6108-4ff7-9dc9-193511f407ea",
-                name: "Sony Xperia",
-                details: "LG, Nexus 5"
-            }, {
-                id: 1,
-                cid: "5e53695f-74cf-450f-86e1-11a9fa708398",
-                name: "Alice's mac",
-                details: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36"
-            }], 
+            cids:[], 
             activeCid: '',
             urlMapping: [],
-            urlPrefix: 'http://campaign.vm5apis.com'
+            urlPrefix: 'http://campaign.vm5apis.com',
+            openManager: false
         };
     },
     componentDidMount: function() {
@@ -1518,10 +1516,11 @@ var ContentBox = React.createClass({
                 <div>
                     <Row>
                         <Col xs={12} md={3} >
-                            <CidPanel cids={this.state.cids} state={this.state} activeCid={this.state.activeCid} updateRootState={this.updateRootState} updateRootCidName={this.updateRootCidName}/>
+                            <CidPanel cids={this.state.cids} urlPrefix={this.state.urlPrefix} activeCid={this.state.activeCid} updateRootState={this.updateRootState} updateRootCidName={this.updateRootCidName}/>
                         </Col>
                         {this.displayMainPanel()}
                     </Row>
+                    <DialogPanel openManager={this.state.openManager} cids={this.state.cids} updateRootState={this.updateRootState} updateRootCidName={this.updateRootCidName} />
                 </div>
             </MuiThemeProvider>
         );
