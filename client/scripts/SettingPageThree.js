@@ -160,7 +160,7 @@ var SettingPageThree = React.createClass ({
                             "fps": 2
                         }
                     }
-                    unthrottleObj.delay = 3000;
+                    unthrottleObj.delay = 4000;
                     commands = this.deleteRepeatCommand(commands, commandObj);
                     commands = this.deleteRepeatCommand(commands, unthrottleObj);
                 }
@@ -172,7 +172,7 @@ var SettingPageThree = React.createClass ({
             else if (this.state.phase == "duringGame") {
                 if (this.state.action == "poor") {
                     commandObj.type = "set-fps";
-                    params.fps = 10;
+                    params.fps = 5;
                     commandObj["params"] = params;
                     unthrottleObj.delay = (startTime + 3 + duration)*1000;
                 }

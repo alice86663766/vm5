@@ -59,9 +59,10 @@ var CidPanel = React.createClass ({
                 color: '#ffffff'
             },
             managerButton: {
-                margin: 12,
+                margin: '6px 12px',
             },
             buttonTextActive: {
+                display: 'inline-block',
                 textTransform: 'capitalize',
                 color: '#ffffff'
             },
@@ -99,7 +100,7 @@ var CidPanel = React.createClass ({
                 <Divider />
                 <Row center="xs">
                     <Col xs={12}>
-                        <RaisedButton label="Device Manager" disabled={this.props.cids.length == 0} onClick={this.onClickManager} style={style.managerButton} backgroundColor="#fc981c" labelStyle={style.buttonTextActive} /> 
+                        <RaisedButton label="Device Manager" disabled={this.props.cids.length == 0} onClick={this.onClickManager} style={style.managerButton} backgroundColor="#fc981c" labelStyle={style.buttonTextActive} />
                     </Col>
                 </Row>
             </Drawer>

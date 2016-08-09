@@ -8,6 +8,7 @@ import SettingForm from './SettingForm';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 injectTapEventPlugin();
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import {Tabs, Tab} from 'material-ui/Tabs';
 import $ from 'jquery';
 import apiMapping from '../apiMapping.json';
 import urlMapping from '../urlMapping.json';
@@ -36,12 +37,7 @@ var ContentBox = React.createClass({
     },
     getInitialState: function() {
         return {
-            cids:[{
-                id: 0,
-                cid: '5e53695f-74cf-450f-86e1-11a9fa708398',
-                name: 'Test',
-                details: 'Sony Xperia'
-            }], 
+            cids:[], 
             activeCid: '',
             urlMapping: [],
             urlPrefix: 'http://campaign.vm5apis.com',
@@ -72,10 +68,19 @@ var ContentBox = React.createClass({
         array.push(obj);
         this.setState({cids: array});
     },
+    handleChangeTab: function(value) {
+        this.setState({tab: value});
+    },
     displayMainPanel: function() {
         const style = {
             div: {
                 padding: '285px 0px'
+            },
+            inkBar: {
+                background: '#1cfc98'
+            },
+            tab: {
+                background: '#fc981c'
             }
         }
         var debugUrl = this.state.urlPrefix + "/aux/debug/M";
@@ -90,11 +95,7 @@ var ContentBox = React.createClass({
                             <EventPanel cid={this.state.activeCid} url={debugUrl} pullInterval={500}/>
                         </Col>
                     </Row>
-                    <Row>
-                        <Col xs={12} >
-                            <LogPanel state={this.state} pushCid={this.pushCid} updateRootState={this.updateRootState} />
-                        </Col>
-                    </Row>
+                    <LogPanel state={this.state} pushCid={this.pushCid} updateRootState={this.updateRootState} />
                 </Col>
             );
         }
