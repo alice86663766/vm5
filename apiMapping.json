@@ -1,0 +1,76 @@
+{
+	"campaignsLangCids": {
+		"display": "Language",
+		"textinput": true
+	},
+
+	"timelimitCids": {
+		"display": "Time Limit",
+		"textinput": true
+	},
+
+	"campaignsStatusCodeCids": {
+		"display": "HTTP Response Code (Campaign)",
+		"textinput": true
+	},
+
+	"statusCodeCids": {
+		"display": "HTTP Response Code (Trial)",
+		"textinput": true
+	},
+
+	"onetimeTokenStatusCodeCids": {
+		"display": "HTTP Response Code (Onetime Token)",
+		"textinput": true
+	},
+
+	"expiredCids": {
+		"display": "Campaign Expired (Trial)",
+		"textinput": false
+	},
+
+	"campaignsExpiredCids": {
+		"display": "Campaign Expired (Campaign)",
+		"textinput": false
+	},
+
+	"campaignsNovmCids": {
+		"display": "No VM (Campaign)",
+		"textinput": false
+	},
+
+	"novmCids": {
+		"display": "No VM (Trial)",
+		"textinput": false
+	},
+
+	"wsNovmCids": {
+		"display": "No VM (Web Socket)",
+		"textinput": false
+	},
+	
+	"notYoursCids": {
+		"display": "VM Not Yours",
+		"textinput": false
+	},
+	
+	"campaignsCorruptedImageCids": {
+		"display": "Image Corrupts (Campaign)",
+		"textinput": false
+	},
+	
+	"downloadFailCids": {
+		"display": "Image Corrupts (Trial)",
+		"textinput": false
+	},
+	
+	"corruptedVideoCids": {
+		"display": "Video Corrupts",
+		"textinput": false
+	},
+	
+	"preRecordedCids": {
+		"display": "Send Pre-recorded Video",
+		"textinput": false
+	}
+}
