@@ -18,7 +18,7 @@ var FormToggle = React.createClass ({
         var key = this.props.id;
         var updatedValue = this.props.state[key];
         return (
-            <Toggle label={this.props.label} onToggle={this.handleChange} toggled={updatedValue} labelStyle={style.label} />
+            <Toggle label={this.props.label} onToggle={this.handleChange} toggled={updatedValue} disabled={this.props.disabled} labelStyle={style.label} />
         );
     }
 });

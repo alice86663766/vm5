@@ -7,6 +7,8 @@ import SettingPageOne from './SettingPageOne';
 import SettingPageTwo from './SettingPageTwo';
 import SettingPageThree from './SettingPageThree';
 import {Row, Col} from 'react-flexbox-grid/lib/index';
+import mappingv3 from '../urlMappingV3.json';
+import mappingv4 from '../urlMapping.json';
 var _ = require('lodash');
 
 var SettingForm = React.createClass ({
@@ -34,23 +36,12 @@ var SettingForm = React.createClass ({
     },
     componentDidMount: function() {
         this.loadDebugTime();
+        //this.setState({urlMapping: urlMapping});
     },
-    componentWillReceiveProps: function(props) {
-        this.setState({
-            page: 1, 
-            language: '', 
-            timeLimit:'' , 
-            httpResponse:'',
-            httpSelect:'Not set',  
-            noVm:'Not set', 
-            campaignExpired: 'Not set', 
-            vmNotYours: false, 
-            imgCorrupts:'Not set', 
-            videoCorrupts: false, 
-            preRecordedVideo: false,  
-            mapping: [],
-            debugTimeLimit: ''
-        });
+    componentWillReceiveProps: function(nextProps) {
+        if ((nextProps.version != this.props.version) || (nextProps.urlPrefix != this.props.urlPrefix) || (nextProps.cid != this.props.cid)) {
+            this.resetState(1);
+        }
     },
     getInitialState: function() {
         return {
@@ -62,10 +53,9 @@ var SettingForm = React.createClass ({
             noVm:'Not set', 
             campaignExpired: 'Not set', 
             vmNotYours: false, 
-            imgCorrupts:'Not set', 
+            imgCorrupts: 'Not set', 
+            bufferCorrupts: false,
             videoCorrupts: false, 
-            preRecordedVideo: false,
-            mapping: [],
             debugTimeLimit: ''
         };
     },
@@ -79,10 +69,10 @@ var SettingForm = React.createClass ({
             noVm:'Not set', 
             campaignExpired: 'Not set', 
             vmNotYours: false, 
-            imgCorrupts:'Not set', 
+            imgCorrupts: 'Not set',
+            bufferCorrupts: false, 
             videoCorrupts: false, 
-            preRecordedVideo: false,  
-            mapping: [],
+            preRecordedVideo: false,
             debugTimeLimit: ''
         });
     },
@@ -94,11 +84,11 @@ var SettingForm = React.createClass ({
                 );
             case 2:
                 return (
-                    <SettingPageTwo state={this.state} updateState={this.updateState} onChangeChecked={this.onChangeChecked} noVmOptions={noVmOptions} corruptedImageOptions={corruptedImageOptions} />
+                    <SettingPageTwo version={this.props.version} state={this.state} updateState={this.updateState} onChangeChecked={this.onChangeChecked} noVmOptions={noVmOptions} corruptedImageOptions={corruptedImageOptions} />
                 );
             case 3:
                 return (
-                    <SettingPageThree cid={this.props.cid} urlPrefix={this.props.urlPrefix} debugTimeLimit={this.state.debugTimeLimit} />
+                    <SettingPageThree version={this.props.version} cid={this.props.cid} urlPrefix={this.props.urlPrefix} debugTimeLimit={this.state.debugTimeLimit} handleReset={this.handleReset} preScheduleEmpty={this.props.preScheduleEmpty} />
                 );
         }
     },
@@ -124,14 +114,18 @@ var SettingForm = React.createClass ({
                 this.loadDebugTime();
             }.bind(this),
             error: function(xhr, status, err) {
-                alert("Error!!");
+                alert("We can't process your request right now. Please check if you are connected to Mock-AP. If this error message keeps showing, please contact the person in charge (Alice/Gary/Denny/Cades)");
             }.bind(this)
         });
     },
     prepareAndSendRequest: function() {
         var stateObj = this.state;
         var cid = this.props.cid;
-        var mapping = this.props.mapping;
+        console.log(stateObj);
+        var mapping = mappingv4;
+        if (this.props.version == "v3") {
+            mapping = mappingv3;
+        }
         _.forEach(stateObj, function(value, key) {
             if (key in mapping && value && (value != "Not set")) { //only look at attributes that are set
                 var url = '';
@@ -189,7 +183,7 @@ var SettingForm = React.createClass ({
             <div>
                 <FlatButton type="button" id="1" onClick={() => this.handleClick(1)} style={this.state.page == 1 ? style.buttonActive : null} >1</FlatButton>
                 <FlatButton type="button" id="2" onClick={() => this.handleClick(2)} style={this.state.page == 2 ? style.buttonActive : null} >2</FlatButton>
-                <FlatButton type="button" id="3" onClick={() => this.handleClick(3)} style={this.state.page == 3 ? style.buttonActive : null} >3</FlatButton>
+                <FlatButton type="button" id="3" onClick={() => this.handleClick(3)} style={this.state.page == 3 ? style.buttonActive : null} version={this.props.version}>3</FlatButton>
             </div>
         );
     },

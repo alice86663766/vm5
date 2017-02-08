@@ -6,23 +6,13 @@ import ArrowDropRight from 'material-ui/svg-icons/navigation-arrow-drop-right';
 import Divider from 'material-ui/Divider';
 import Drawer from 'material-ui/Drawer';
 import DropDownMenu from 'material-ui/DropDownMenu';
+import {List, ListItem} from 'material-ui/List';
 import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import RaisedButton from 'material-ui/RaisedButton';
+import Subheader from 'material-ui/Subheader';
 
-var CidPanel = React.createClass ({
-    handleChange: function(e, value) {
-        console.log("cid panel value:", value);
-        this.props.updateRootState("activeCid", value);
-    },
-    handleSelect: function(e, key, value) {
-        console.log("select value:", value);
-        this.props.updateRootState("urlPrefix", value);
-    },
-    onClickManager: function(e) {
-        console.log("clicked!");
-        this.props.updateRootState("openManager", true);
-    },
+var LogMenu = React.createClass ({
     render: function() {
         const style = {
             active: {
@@ -75,32 +65,27 @@ var CidPanel = React.createClass ({
                 fontSize: '16px'
             }
         };
-        var cidNodes = this.props.cids.map(function(cid) {
-            var displayCid = cid.cid.substring(0, 25) + "...";
-            return(
-                <MenuItem key={cid.id} value={cid.cid} primaryText={cid.name == '' ? displayCid : cid.name} rightIcon={this.props.activeCid == cid.cid ? <ArrowDropRight /> : null} style={this.props.activeCid == cid.cid ? style.active : style.normal}/>
-            );
+        var index = _.findIndex(this.props.cids, function(item) {
+            return (item.cid == this.props.activeCid);
         }.bind(this));
         return (
-            <Drawer open={true}>
-                <Menu style={style.header}>
-                    <MenuItem key={1} primaryText="AdServer Dashboard" style={style.headerFont}/>
-                </Menu>
-                <div style={style.div}>
-                    <label style={style.label}>Server: </label>
-                    <DropDownMenu value={this.props.urlPrefix} onChange={this.handleSelect}>
-                        <MenuItem value="http://campaign.vm5apis.com" primaryText="Local" />
-                        <MenuItem value="http://mock.adserver.vm5apis.com" primaryText="Cloud" />
-                    </DropDownMenu>
-                </div>
-                <Divider />
-                <Menu onChange={this.handleChange} style={style.menuHeight} >
-                    {cidNodes}
+            <Drawer open={this.props.open} openSecondary={true}>
+                <Menu style={style.menuHeight} >
+                    <List>
+                        <Subheader>Cid</Subheader>
+                        <ListItem primaryText={this.props.activeCid} />
+                        <Subheader>SDK Version</Subheader>
+                        <ListItem primaryText={this.props.sdkVersion} />
+                        <Subheader>UI Version</Subheader>
+                        <ListItem primaryText={this.props.uiVersion} />
+                        <Subheader>Ad Id</Subheader>
+                        <ListItem primaryText={this.props.adId} />
+                    </List>
                 </Menu>
                 <Divider />
                 <Row center="xs">
                     <Col xs={12}>
-                        <RaisedButton label="Device Manager" disabled={this.props.cids.length == 0} onClick={this.onClickManager} style={style.managerButton} backgroundColor="#fc981c" labelStyle={style.buttonTextActive} />
+                        
                     </Col>
                 </Row>
             </Drawer>
@@ -108,4 +93,4 @@ var CidPanel = React.createClass ({
     }
 });
 
-export default CidPanel;
+export default LogMenu;

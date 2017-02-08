@@ -33,6 +33,7 @@
     "react-bootstrap": "^0.29.5",
     "react-dom": "^15.0.0",
     "react-flexbox-grid": "^0.10.2",
+    "react-scroll": "^1.2.0",
     "react-tap-event-plugin": "^1.0.0"
   }
 }

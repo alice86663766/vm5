@@ -6,11 +6,10 @@ var _ = require('lodash');
 var SettingsBlock = React.createClass({
     //Return API status
     render: function() {
-        var debugStatus = this.props.data.v4;
-        if (this.props.data.v3) {
+        var version= this.props.version;
+        var debugStatus = this.props.data[version];
+        if (version == "v4" && this.props.data.v3) {
             debugStatus.onetimeTokenStatusCodeCids = this.props.data.v3.onetimeTokenStatusCodeCids;
-            debugStatus.corruptedVideoCids = this.props.data.v3.corruptedVideoCids;
-            debugStatus.preRecordedCids = this.props.data.v3.preRecordedCids;
         }
         var mapping = this.props.mapping;
         var cid = this.props.cid;
@@ -28,13 +27,17 @@ var SettingsBlock = React.createClass({
             section: {
                 marginTop: '12px', 
                 padding: '16px',
-                height: '182px'
+                height: '200px',
             },
             title: {
                 fontFamily: 'Roboto, sans-serif',
                 fontWeight: '400',
                 fontSize: '28px',
                 marginTop: '10px'
+            },
+            scrollable: {
+                height: '100px',
+                overflow: 'scroll'
             }
         }
         _.forEach(debugStatus, function(value, key) {
@@ -50,9 +53,11 @@ var SettingsBlock = React.createClass({
             <div style={style.section} >
                 <h3 style={style.title} >Settings</h3>
                 <Divider style={style.shortLine} />
-                <ul>
-                    {settings}
-                </ul>
+                <div style={style.scrollable}>
+                    <ul>
+                        {settings}
+                    </ul>
+                </div>
             </div>
         );
     }

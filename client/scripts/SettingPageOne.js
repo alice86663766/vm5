@@ -44,8 +44,8 @@ var SettingPageOne = React.createClass ({
                 <Paper style={style.section}>
                     <h3 style={style.title}>General Settings</h3>
                     <Divider style={style.shortLine} />
-                    <FormTextboxInput order="1" label="Language" id="language" state={this.props.state} updateState={this.props.updateState} />
-                    <FormTextboxInput order="2" label="Time Limit" id="timeLimit" state={this.props.state} updateState={this.props.updateState} />
+                    <FormTextboxInput order="1" label="Language" id="language" state={this.props.state} updateState={this.props.updateState} /><br />
+                    <FormTextboxInput order="2" label="Time Limit" id="timeLimit" state={this.props.state} updateState={this.props.updateState} /><br />
                     <FormDropdown order="3" label="HTTP Response" id="httpSelect" state={this.props.state} options={this.props.httpSelectOptions} updateState={this.props.updateState} />
                     {this.displayHTTPField()}
                 </Paper>

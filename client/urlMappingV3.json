@@ -1,0 +1,60 @@
+{
+    "language": {
+        "type": "textInput",
+        "url": "/v3/campaigns/set-next-lang-to-:lang/:cid"
+    },
+
+    "timeLimit": {
+        "type": "textInput",
+        "url": "/v3/trial/set-next-timelimit-:n-secs/:cid"
+    },
+
+    "httpResponse": {
+        "type": "textInput",
+        "url": {
+            "Campaign phase": "/v3/campaigns/set-next-status-code-:code/:cid",
+            "Trial phase": "/v3/trial/set-next-status-code-:code/:cid",
+            "Onetime token": "/v3/onetime-token/set-next-status-code-:code/:cid"
+        }
+    },
+
+    "noVm": {
+        "type": "select",
+        "url": {
+            "Campaign phase": "/v3/campaigns/set-next-novm/:cid",
+            "Trial phase": "/v3/trial/set-next-novm/:cid",
+            "Web connection phase": "/v3/trial/set-next-novm-on-connect-ws/:cid"
+        }
+    },
+    
+    "campaignExpired": {
+        "type": "select",
+        "url": {
+            "Campaign phase": "/v3/campaigns/set-next-expired/:cid",
+            "Trial phase": "/v3/trial/set-next-expired/:cid"
+        }
+    },
+    
+    "vmNotYours": {
+        "type": "checkbox",
+        "url": "/v3/trial/set-next-not-yours/:cid"
+    },
+    
+    "imgCorrupts": {
+        "type": "select",
+        "url": {
+            "Campaign phase": "/v3/campaigns/set-next-image-link-corrupt/:cid",
+            "Trial phase": "/v3/trial/set-next-image-link-corrupt/:cid"
+        }    
+    },
+    
+    "videoCorrupts": {
+        "type": "checkbox",
+        "url": "/v3/trial/set-next-video-frames-corrupted/:cid"
+    },
+
+    "bufferCorrupts": {
+        "type": "checkbox",
+        "url": "/v4/trial/set-next-protobuf-corrupted/:cid"
+    }
+}

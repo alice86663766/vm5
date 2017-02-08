@@ -50,11 +50,11 @@
     
     "videoCorrupts": {
         "type": "checkbox",
-        "url": "/v3/trial/set-next-video-frames-corrupted/:cid"
+        "url": "/v4/trial/set-next-video-frames-corrupted/:cid"
     },
-    
-    "preRecordedVideo": {
+
+    "bufferCorrupts": {
         "type": "checkbox",
-        "url": "/v3/trial/set-next-pre-recorded/:cid"
+        "url": "/v4/trial/set-next-protobuf-corrupted/:cid"
     }
 }

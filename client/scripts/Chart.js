@@ -79,7 +79,7 @@ var Chart = React.createClass({
                 "type": "unthrottle"
             }]
             var cid = this.props.cid;
-            this.postWebRequests("http://campaign.vm5apis.com" + "/v4/pre-schedule", cid, commands);
+            this.postWebRequests(this.props.urlPrefix + "/v4/pre-schedule", cid, commands);
         }
         else {
             this.chart.series[0].setData(props.lineData);

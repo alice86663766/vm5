@@ -4,6 +4,7 @@ import $ from 'jquery';
 import ContentSend from 'material-ui/svg-icons/content/send';
 import Divider from 'material-ui/Divider';
 import FlatButton from 'material-ui/FlatButton';
+import FormToggle from './FormToggle';
 import Paper from 'material-ui/Paper';
 import {RadioButton, RadioButtonGroup} from 'material-ui/RadioButton';
 import RaisedButton from 'material-ui/RaisedButton';
@@ -12,8 +13,14 @@ import {Row, Col} from 'react-flexbox-grid/lib/index';
 var _ = require('lodash');
 
 var SettingPageThree = React.createClass ({
+    componentWillReceiveProps: function(nextProps) {
+        if (nextProps.preScheduleEmpty != this.props.preScheduleEmpty) {
+            this.setState({commands: []});
+        }
+    },
     getInitialState: function() {
         return {
+            connectionRefuse: false,
             phase: 'intro',
             action: 'poor',
             startTime: '',
@@ -24,14 +31,15 @@ var SettingPageThree = React.createClass ({
     },
     resetForm: function() {
         this.setState({
+            connectionRefuse: false,
             action: 'poor',
             startTime: '',
             duration: '', 
             fps: ''
         });
     },
-    setThrottlable: function(url) {
-        //console.log("sent!");
+    sendRequest: function(url) {
+        console.log("sent!", url);
         $.ajax({
             url: url,
             dataType: 'json',
@@ -106,112 +114,118 @@ var SettingPageThree = React.createClass ({
     },
     handleAdd: function (e) {
         e.preventDefault();
-        var passByReference = {noError: true};
-        if (this.state.phase == "duringGame") {
-            this.checkValidity("Start Time", "startTime", passByReference);
-            if (this.state.action == "poor" || this.state.action == "set-fps") {
-                this.checkValidity("Duration", "duration", passByReference);
-                if (this.state.action == "set-fps") {
-                    this.checkValidity("Fps", "fps", passByReference);
-                }
-            }
+        if (this.state.connectionRefuse && this.props.version == "v4") {
+            var url = this.props.urlPrefix + "/v4/trial/set-next-ws-connection-refused/" + this.props.cid; //change to real url: delete this line
+            this.sendRequest(url);
         }
-        var startTime = 0;
-        var duration = 0;
-        var debugTimeLimit = parseFloat(this.props.debugTimeLimit);
-        if (this.state.startTime) {
-            startTime = parseFloat(this.state.startTime);
-        }
-        if (this.state.duration) {
-            duration = parseFloat(this.state.duration);
-        }
-        if ((startTime + duration) > debugTimeLimit) {
-            if (startTime > debugTimeLimit) {
-                passByReference.noError = false;
-                alert("Your start time exceeds time limit. Please do it again.");
-            }
-            else {
-                duration = debugTimeLimit - startTime;
-                if (duration == 0) {
-                    passByReference.noError = false;
-                    alert("Please don't set ftp at the end of game.");
-                }
-            }
-        }
-        if (passByReference.noError) {
-            var commands = this.state.commands;
-            var commandObj = {
-                "trigger": "after-connect",
-                "type": this.state.action,
-                "delay": 0
-            };
-            var unthrottleObj = {
-                "trigger": "after-connect",
-                "type": "unthrottle",
-                "delay": 0
-            }
-            var params = {"fps": 0};
-            if (this.state.phase == "intro") {
-                if (this.state.action == "poor") {
-                    commandObj = {
-                        "trigger": "on-connect",
-                        "type": "set-fps",
-                        "params": {
-                            "fps": 2
-                        }
+        else {
+            var passByReference = {noError: true};
+            if (this.state.phase == "duringGame") {
+                this.checkValidity("Start Time", "startTime", passByReference);
+                if (this.state.action == "poor" || this.state.action == "set-fps") {
+                    this.checkValidity("Duration", "duration", passByReference);
+                    if (this.state.action == "set-fps") {
+                        this.checkValidity("Fps", "fps", passByReference);
                     }
-                    unthrottleObj.delay = 4000;
-                    commands = this.deleteRepeatCommand(commands, commandObj);
-                    commands = this.deleteRepeatCommand(commands, unthrottleObj);
+                }
+            }
+            var startTime = 0;
+            var duration = 0;
+            var debugTimeLimit = parseFloat(this.props.debugTimeLimit);
+            if (this.state.startTime) {
+                startTime = parseFloat(this.state.startTime);
+            }
+            if (this.state.duration) {
+                duration = parseFloat(this.state.duration);
+            }
+            if ((startTime + duration) > debugTimeLimit) {
+                if (startTime > debugTimeLimit) {
+                    passByReference.noError = false;
+                    alert("Your start time exceeds time limit. Please do it again.");
                 }
                 else {
-                    commandObj.delay = 1000;
+                    duration = debugTimeLimit - startTime;
+                    if (duration == 0) {
+                        passByReference.noError = false;
+                        alert("Please don't set ftp at the end of game.");
+                    }
+                }
+            }
+            if (passByReference.noError) {
+                var commands = this.state.commands;
+                var commandObj = {
+                    "trigger": "after-connect",
+                    "type": this.state.action,
+                    "delay": 0
+                };
+                var unthrottleObj = {
+                    "trigger": "after-connect",
+                    "type": "unthrottle",
+                    "delay": 0
+                }
+                var params = {"fps": 0};
+                if (this.state.phase == "intro") {
+                    if (this.state.action == "poor") {
+                        commandObj = {
+                            "trigger": "on-connect",
+                            "type": "set-fps",
+                            "params": {
+                                "fps": 2
+                            }
+                        }
+                        unthrottleObj.delay = 4000;
+                        commands = this.deleteRepeatCommand(commands, commandObj);
+                        commands = this.deleteRepeatCommand(commands, unthrottleObj);
+                    }
+                    else {
+                        commandObj.delay = 1000;
+                        commands = this.deleteRepeatCommand(commands, commandObj);
+                    }
+                }
+                else if (this.state.phase == "duringGame") {
+                    if (this.state.action == "poor") {
+                        commandObj.type = "set-fps";
+                        params.fps = 5;
+                        commandObj["params"] = params;
+                        unthrottleObj.delay = (startTime + 3 + duration)*1000;
+                    }
+                    else if (this.state.action == "set-fps") {
+                        params.fps = parseFloat(this.state.fps);
+                        commandObj["params"] = params;
+                        unthrottleObj.delay = (startTime + 3 + duration)*1000;
+                    }
+                    commandObj.delay = (startTime + 3)*1000;
                     commands = this.deleteRepeatCommand(commands, commandObj);
+                    if (unthrottleObj.delay != 0) {
+                        commands = this.deleteRepeatCommand(commands, unthrottleObj);
+                    }
                 }
-            }
-            else if (this.state.phase == "duringGame") {
-                if (this.state.action == "poor") {
-                    commandObj.type = "set-fps";
-                    params.fps = 5;
-                    commandObj["params"] = params;
-                    unthrottleObj.delay = (startTime + 3 + duration)*1000;
-                }
-                else if (this.state.action == "set-fps") {
-                    params.fps = parseFloat(this.state.fps);
-                    commandObj["params"] = params;
-                    unthrottleObj.delay = (startTime + 3 + duration)*1000;
-                }
-                commandObj.delay = (startTime + 3)*1000;
-                commands = this.deleteRepeatCommand(commands, commandObj);
-                if (unthrottleObj.delay != 0) {
-                    commands = this.deleteRepeatCommand(commands, unthrottleObj);
-                }
-            }
-            commands.sort(function(a, b) {
-                if (b.trigger == a.trigger) {
-                    if (a.delay < b.delay) {
+                commands.sort(function(a, b) {
+                    if (b.trigger == a.trigger) {
+                        if (a.delay < b.delay) {
+                            return -1;
+                        }
+                        else if (a.delay > b.delay) {
+                            return 1;
+                        }
+                        return 0;
+                    }
+                    //return b.trigger < a.trigger ? -1 : b.trigger > a.trigger ? 1 : 0;
+                    if (b.trigger < a.trigger) {
                         return -1;
                     }
-                    else if (a.delay > b.delay) {
+                    if (b.trigger > a.trigger) {
                         return 1;
                     }
-                    return 0;
-                }
-                //return b.trigger < a.trigger ? -1 : b.trigger > a.trigger ? 1 : 0;
-                if (b.trigger < a.trigger) {
-                    return -1;
-                }
-                if (b.trigger > a.trigger) {
-                    return 1;
-                }
-            });
-            this.setState({commands: commands});
-            //Start sending requests to server
-            var cid = this.props.cid;
-            this.setThrottlable(this.props.urlPrefix + "/v4/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
-            this.postWebRequests(this.props.urlPrefix + "/v4/pre-schedule", cid, commands); //change to real url: delete the first part
-            console.log("Added!");
-            this.resetForm();
+                });
+                this.setState({commands: commands});
+                //Start sending requests to server
+                var cid = this.props.cid;
+                this.sendRequest(this.props.urlPrefix + "/" + this.props.version + "/trial/set-next-throttlable/" + cid); //change to real url: delete the first part
+                this.postWebRequests(this.props.urlPrefix + "/" + this.props.version + "/pre-schedule", cid, commands); //change to real url: delete the first part
+                console.log("Added!");
+                this.resetForm();
+            }
         }
     },
     handleReset: function(e) {
@@ -219,12 +233,7 @@ var SettingPageThree = React.createClass ({
         console.log("reset!");
         this.resetForm();
         this.setState({commands: []});
-        var commands = [{
-            "trigger": "on-connect",
-            "type": "unthrottle"
-        }]
-        var cid = this.props.cid;
-        this.postWebRequests(this.props.urlPrefix + "/v4/pre-schedule", cid, commands);
+        this.props.handleReset();
     },
     /*handleDelete: function(index) {
         var items = this.props.state.webItems;
@@ -244,6 +253,12 @@ var SettingPageThree = React.createClass ({
     },
     onChangePhase: function(key, e) {
         this.setState({phase: key});
+        console.log(this.state);
+    },
+    onChangeChecked: function(id) {
+        var obj = {};
+        obj[id] = !this.state[id];
+        this.setState(obj);
         console.log(this.state);
     },
     displayPhaseButton: function() {
@@ -274,7 +289,7 @@ var SettingPageThree = React.createClass ({
             if (this.state.action == "poor") {
                 return (
                     <div>
-                        <TextField hintText="Start Time (sec)" floatingLabelText="Start Time" value={this.state.startTime} onChange={this.onChangeText.bind(this, "startTime")} />
+                        <TextField hintText="Start Time (sec)" floatingLabelText="Start Time" value={this.state.startTime} onChange={this.onChangeText.bind(this, "startTime")} /><br />
                         <TextField hintText="Duration (sec)" floatingLabelText="Duration" value={this.state.duration} onChange={this.onChangeText.bind(this, "duration")} />
                     </div>
                 )
@@ -282,8 +297,8 @@ var SettingPageThree = React.createClass ({
             else if (this.state.action == "set-fps") {
                 return (
                     <div>
-                        <TextField hintText="Start Time (sec)" floatingLabelText="Start Time" value={this.state.startTime} onChange={this.onChangeText.bind(this, "startTime")} />
-                        <TextField hintText="Duration (sec)" floatingLabelText="Duration" value={this.state.duration} onChange={this.onChangeText.bind(this, "duration")} />
+                        <TextField hintText="Start Time (sec)" floatingLabelText="Start Time" value={this.state.startTime} onChange={this.onChangeText.bind(this, "startTime")} /><br />
+                        <TextField hintText="Duration (sec)" floatingLabelText="Duration" value={this.state.duration} onChange={this.onChangeText.bind(this, "duration")} /><br />
                         <TextField hintText="Fps" floatingLabelText="Fps" value={this.state.fps} onChange={this.onChangeText.bind(this, "fps")} />
                     </div>
                 )
@@ -295,6 +310,45 @@ var SettingPageThree = React.createClass ({
                     </div>
                 )
             }
+        }
+    },
+    displayMain: function() {
+        const style = {
+            label: {
+                fontFamily: 'Roboto, sans-serif',
+                fontSize: '16px', 
+                fontWeight: '400'
+            },
+            radioButton: {
+                width: '50%',
+                fontFamily: 'Roboto, sans-serif',
+                fontSize: '13px',
+                fontWeight: '400'
+            },
+            innerBlock: {
+                height: '438px'
+            }
+        };
+        if (!this.state.connectionRefuse) {
+            return (
+                <div style={style.innerBlock}>
+                    <label style={style.label}>Choose a phase:</label>
+                    {this.displayPhaseButton()}
+                    <label style={style.label}>Choose an action:</label>
+                    <RadioButtonGroup name="webSettings" valueSelected={this.state.action} onChange={this.onChangeSelect}>
+                        <RadioButton value="poor" label="Poor connection" style={style.radioButton} />
+                        <RadioButton value="set-fps" label="Set fps..." disabled={this.state.phase == "intro" ? true : false} style={style.radioButton} />
+                        <RadioButton value="terminate-ws" label="Terminate web socket" style={style.radioButton} />
+                    </RadioButtonGroup>
+                    {this.displayTextFields()}
+                </div>
+            )
+        }
+        else {
+            return (
+                <div style={style.innerBlock}>
+                </div>
+            )
         }
     },
     render: function() {
@@ -322,17 +376,6 @@ var SettingPageThree = React.createClass ({
                 fontSize: '28px',
                 marginTop: '10px'
             },
-            label: {
-                fontFamily: 'Roboto, sans-serif',
-                fontSize: '16px', 
-                fontWeight: '400'
-            },
-            radioButton: {
-                width: '50%',
-                fontFamily: 'Roboto, sans-serif',
-                fontSize: '13px',
-                fontWeight: '400'
-            },
             textField: {
                 display: 'inline-block'
             },
@@ -348,9 +391,6 @@ var SettingPageThree = React.createClass ({
             reset: {
                 backgroundColor: '#999999',
                 color: '#ffffff'
-            },
-            innerBlock: {
-                height: '477px'
             },
             phaseButton: {
                 margin: 12,
@@ -368,17 +408,9 @@ var SettingPageThree = React.createClass ({
                 <Paper style={style.section}>
                     <h3 style={style.title}>Web Socket/Connection</h3>
                     <Divider style={style.shortLine} />
-                    <div style={style.innerBlock}>
-                        <label style={style.label}>Choose a phase:</label>
-                        {this.displayPhaseButton()}
-                        <label style={style.label}>Choose an action:</label>
-                        <RadioButtonGroup name="webSettings" valueSelected={this.state.action} onChange={this.onChangeSelect}>
-                            <RadioButton value="poor" label="Poor connection" style={style.radioButton} />
-                            <RadioButton value="set-fps" label="Set fps..." disabled={this.state.phase == "intro" ? true : false} style={style.radioButton} />
-                            <RadioButton value="terminate-ws" label="Terminate web socket" style={style.radioButton} />
-                        </RadioButtonGroup>
-                        {this.displayTextFields()}
-                    </div>
+                    <FormToggle order="1" label="Connection Refused" id="connectionRefuse" state={this.state} disabled={this.props.version == "v3"} onChangeChecked={this.onChangeChecked}/>
+                    <Divider style={style.longLine} />
+                    {this.displayMain()}
                     <Row center="xs">
                         <Col xs={9}>
                             <FlatButton onClick={this.handleAdd} style={style.add} icon={<ContentSend />}>Add </FlatButton>

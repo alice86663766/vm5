@@ -5,6 +5,7 @@ import SettingsBlock from './SettingsBlock';
 import $ from 'jquery';
 import Paper from 'material-ui/Paper';
 var _ = require('lodash');
+import apiMapping from '../apiMapping.json';
 
 var EventPanel = React.createClass({
     loadApiStatus: function() {
@@ -15,9 +16,10 @@ var EventPanel = React.createClass({
             success: function(data){
                 this.setState({data: data});
                 var debugTimeLimit = '';
-                if (data.v4.timelimitCids[this.props.cid]) {
+                var version = this.props.version;
+                if (data[version].timelimitCids[this.props.cid]) {
                     //console.log("Load api time");
-                    debugTimeLimit = data.v4.timelimitCids[this.props.cid];
+                    debugTimeLimit = data[version].timelimitCids[this.props.cid];
                     debugTimeLimit = parseFloat(debugTimeLimit);
                     //console.log(debugTimeLimit);
                     this.setState({time: debugTimeLimit});
@@ -25,19 +27,12 @@ var EventPanel = React.createClass({
                 else {
                     this.setState({time: 60});
                 }
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.log(this.props.url, status, err.toString());
-            }.bind(this)
-        });
-    },
-    loadApiMapping: function() {
-        $.ajax({
-            url: '/apiMapping.json',
-            dataType: 'json',
-            cache: false,
-            success: function(data){
-                this.setState({mapping: data});
+                if (!data[version].preScheduleCids[this.props.cid] && !this.props.preScheduleEmpty) {
+                    this.props.updateRootState("preScheduleEmpty", true);
+                }
+                else if (data[version].preScheduleCids[this.props.cid] && this.props.preScheduleEmpty) {
+                    this.props.updateRootState("preScheduleEmpty", false);
+                }
             }.bind(this),
             error: function(xhr, status, err) {
                 console.log(this.props.url, status, err.toString());
@@ -45,7 +40,7 @@ var EventPanel = React.createClass({
         });
     },
     componentDidMount: function() {
-        this.loadApiMapping();
+        this.setState({mapping: apiMapping});
         this.loadApiStatus();
         setInterval(this.loadApiStatus, this.props.pullInterval);
     },
@@ -57,9 +52,10 @@ var EventPanel = React.createClass({
         var lineData = [];
         var flagData = [];
         var lastFps = 100;
+        var version = this.props.version;
         //{x: 0, text:'No speed limit', title:'No speed limit'}
-        if (this.state.data.v4 && this.state.data.v4.preScheduleCids && this.state.data.v4.preScheduleCids[this.props.cid]) {
-            objs = this.state.data.v4.preScheduleCids[this.props.cid];
+        if (this.state.data[version] && this.state.data[version].preScheduleCids && this.state.data[version].preScheduleCids[this.props.cid]) {
+            objs = this.state.data[version].preScheduleCids[this.props.cid];
             var filtered = [];
             filtered = _.filter(objs, function(obj) {
                 if (obj.type == "set-fps" || obj.type == "unthrottle") {
@@ -132,8 +128,8 @@ var EventPanel = React.createClass({
         }
         return (
             <Paper style={style.eventPanel}>
-                <SettingsBlock cid={this.props.cid} url={this.props.url} pullInterval={this.props.pullInterval} time={this.state.time} data={this.state.data} mapping={this.state.mapping} />
-                <Chart container="webSettingChart" cid={this.props.cid} url={this.props.url} time={this.state.time} lineData={lineData} flagData={flagData} />
+                <SettingsBlock cid={this.props.cid} url={this.props.url} pullInterval={this.props.pullInterval} time={this.state.time} data={this.state.data} mapping={this.state.mapping} version={this.props.version}/>
+                <Chart container="webSettingChart" cid={this.props.cid} url={this.props.url} urlPrefix={this.props.urlPrefix} time={this.state.time} lineData={lineData} flagData={flagData} />
             </Paper>
         );
     }

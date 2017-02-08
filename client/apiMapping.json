@@ -68,9 +68,14 @@
 		"display": "Video Corrupts",
 		"textinput": false
 	},
-	
-	"preRecordedCids": {
-		"display": "Send Pre-recorded Video",
+
+	"corruptedProtobufCids": {
+		"display": "Protocol Buffer Corrupts",
+		"textinput": false
+	},
+
+	"wsConnectionRefusedCids": {
+		"display": "Connection Refused",
 		"textinput": false
 	}
 }
